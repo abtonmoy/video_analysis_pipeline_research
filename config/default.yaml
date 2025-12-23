@@ -1,0 +1,84 @@
+# Pipeline configuration
+pipeline:
+  name: "adaptive-ad-pipeline"
+  version: "1.0.0"
+
+# Video ingestion
+ingestion:
+  max_resolution: 720 # Downscale if larger
+  extract_audio: true
+
+# Change detection
+change_detection:
+  method: "histogram" # Options: frame_diff, histogram, edge
+  threshold: 0.15
+  min_interval_ms: 100 # Minimum time between candidates
+
+# Scene detection
+scene_detection:
+  method: "content" # Options: content, threshold, transnet
+  threshold: 27.0
+  min_scene_length_s: 0.5
+
+# Hierarchical deduplication
+deduplication:
+  phash:
+    enabled: true
+    threshold: 8 # Hamming distance
+  ssim:
+    enabled: true
+    threshold: 0.92
+  clip:
+    enabled: true
+    model: "ViT-B/32"
+    threshold: 0.90
+    device: "cuda" # Options: cuda, cpu
+    batch_size: 32 # GPU batching for efficiency
+
+# Representative selection
+selection:
+  method: "clustering" # Options: clustering, uniform, first
+  max_frames_per_scene: 3
+  min_temporal_gap_s: 0.5
+
+# LLM extraction
+extraction:
+  provider: "anthropic" # Options: anthropic, openai, google
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 2000
+  temperature: 0.0
+
+  # Temporal reasoning
+  temporal_context:
+    enabled: true
+    include_timestamps: true
+    include_time_deltas: true
+    include_position_labels: true # [OPENING], [CLOSING]
+    include_narrative_instructions: true
+
+  # Adaptive schema
+  schema:
+    mode: "adaptive" # Options: adaptive, fixed, flexible
+    # For adaptive mode: two-pass (detect type, then extract)
+    # For fixed mode: use schema_name
+    # For flexible mode: universal schema with optional fields
+    schema_name: "full" # Used when mode=fixed
+    confidence_sampling:
+      enabled: false
+      n_samples: 3
+      temperature: 0.3
+
+# Batch processing
+batch:
+  enabled: true
+  max_workers: 4 # Number of parallel video processors
+  gpu_batch_size: 32 # CLIP embedding batch size
+
+# Evaluation
+evaluation:
+  metrics:
+    - frame_reduction_rate
+    - api_cost_reduction
+    - processing_time
+    - extraction_accuracy
+  save_intermediate: true

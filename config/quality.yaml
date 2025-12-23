@@ -1,0 +1,23 @@
+# Inherit from default
+_extends: default.yaml
+
+# Override for quality
+scene_detection:
+  method: "transnet" # Neural scene detection
+
+deduplication:
+  phash:
+    threshold: 12 # Less aggressive
+  clip:
+    model: "ViT-L/14" # Larger CLIP model
+    threshold: 0.95 # Keep more frames
+
+selection:
+  max_frames_per_scene: 5 # More frames per scene
+
+extraction:
+  schema:
+    mode: "adaptive"
+    confidence_sampling:
+      enabled: true
+      n_samples: 3
