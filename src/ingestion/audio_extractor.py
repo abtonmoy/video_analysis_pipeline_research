@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional, Tuple
 import numpy as np
 
-from ..utils import VideoMetadata, get_video_metadata, VideoFrameIterator
 
 logger = logging.getLogger(__name__)
 
