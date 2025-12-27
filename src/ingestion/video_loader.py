@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 import numpy as np
 
-from ..utils import VideoMetadata, get_video_metadata, VideoFrameIterator
+from ..utils.video_utils import VideoMetadata, get_video_metadata, VideoFrameIterator
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,13 @@ class VideoLoader:
         Returns:
             Path to extracted audio file, or None if failed
         """
-        output_path = Path(video_path).with_suffix('.wav')
+        # Create outputs/audio directory if it doesn't exist
+        audio_dir = Path('outputs/audio')
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create output path with same name as video but .wav extension
+        video_name = Path(video_path).stem
+        output_path = audio_dir / f"{video_name}.wav"
         
         try:
             cmd = [
