@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional
 from abc import ABC, abstractmethod
 import numpy as np
 import cv2
-from change_detector import ChangeDetector, AdaptiveChangeDetector, FrameDifferenceDetector
+from .change_detector import ChangeDetector, AdaptiveChangeDetector, FrameDifferenceDetector
 
 logger = logging.getLogger(__name__)
 
