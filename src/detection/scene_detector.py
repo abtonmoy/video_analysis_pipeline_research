@@ -133,7 +133,7 @@ class CandidateFrameExtractor:
         Returns:
             List of (timestamp, frame) tuples
         """
-        from ..utils import VideoFrameIterator
+        from ..utils.video_utils import VideoFrameIterator
         
         candidates = []
         previous_frame = None
