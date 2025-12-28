@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
-from src.utils.config import load_config
+from src.utils.config import load_config, deep_merge, get_device
 from src.utils.logging import setup_logging
 from src.utils.metrics import PipelineResult, FrameInfo, SceneInfo
 from src.utils.video_utils import get_video_metadata
@@ -19,8 +19,9 @@ from src.detection.change_detector import get_change_detector
 from src.detection.scene_detector import CandidateFrameExtractor, SceneDetector
     
 from src.deduplication.hierarchical import create_deduplicator
-from .selection import create_selector, FrameCandidate
-from .extraction import create_extractor
+from src.selection.representative import create_selector 
+from src.selection.clustering import FrameCandidate
+from src.extraction import create_extractor
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,6 @@ class AdVideoPipeline:
             self.config = self._get_default_config()
         
         if overrides and config is not None:
-            from .utils import deep_merge
             self.config = deep_merge(self.config, overrides)
         
         # Setup logging
@@ -148,7 +148,7 @@ class AdVideoPipeline:
     def process(
         self,
         video_path: str,
-        skip_extraction: bool = False
+        skip_extraction: bool = True
     ) -> PipelineResult:
         """
         Process a single video through the pipeline.

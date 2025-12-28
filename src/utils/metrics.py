@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from video_utils import VideoMetadata
+from .video_utils import VideoMetadata
 
 logger = logging.getLogger(__name__)
 @dataclass
