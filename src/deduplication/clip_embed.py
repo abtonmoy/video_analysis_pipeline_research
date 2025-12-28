@@ -5,9 +5,9 @@ import numpy as np
 from PIL import Image
 import cv2
 
-from base import BaseDeduplicator
-from phash import PHashDeduplicator
-from ssim import SSIMDeduplicator
+from .base import BaseDeduplicator
+from .phash import PHashDeduplicator
+from .ssim import SSIMDeduplicator
 
 logger = logging.getLogger(__name__)
 
