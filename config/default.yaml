@@ -32,7 +32,7 @@ deduplication:
     enabled: true
     model: "ViT-B/32"
     threshold: 0.90
-    device: "cuda" # Options: cuda, cpu
+    device: "cpu" # Options: cuda, cpu
     batch_size: 32 # GPU batching for efficiency
 
 # Representative selection
