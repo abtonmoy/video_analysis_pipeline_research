@@ -5,10 +5,10 @@ import numpy as np
 from PIL import Image
 import cv2
 
-from base import BaseDeduplicator
-from phash import PHashDeduplicator
-from ssim import SSIMDeduplicator
-from clip_embed import CLIPDeduplicator
+from .base import BaseDeduplicator
+from .phash import PHashDeduplicator
+from .ssim import SSIMDeduplicator
+from .clip_embed import CLIPDeduplicator
 
 logger = logging.getLogger(__name__)
 # ============================================================================
