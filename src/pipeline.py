@@ -23,6 +23,9 @@ from src.selection.representative import create_selector
 from src.selection.clustering import FrameCandidate
 from src.extraction.llm_client import create_extractor
 
+from dotenv import load_dotenv
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 
@@ -148,7 +151,7 @@ class AdVideoPipeline:
     def process(
         self,
         video_path: str,
-        skip_extraction: bool = True
+        skip_extraction: bool = False
     ) -> PipelineResult:
         """
         Process a single video through the pipeline.

@@ -103,6 +103,16 @@ class TemporalClusterer:
                 if i < len(embeddings):
                     cand.embedding = embeddings[i]
         
+        # ALWAYS include first and last frame
+        first_frame = min(candidates, key=lambda c: c.timestamp)
+        last_frame = max(candidates, key=lambda c: c.timestamp)
+        
+        first_frame.is_representative = True
+        last_frame.is_representative = True
+        
+        # Track must-include timestamps (not objects, since they're not hashable)
+        must_include_timestamps = {first_frame.timestamp, last_frame.timestamp}
+        
         # Group by scene
         scene_frames: Dict[int, List[FrameCandidate]] = {}
         for cand in candidates:
@@ -117,22 +127,51 @@ class TemporalClusterer:
         for scene_id in sorted(scene_frames.keys()):
             scene_cands = scene_frames[scene_id]
             
+            # Check how many must_include frames are in this scene
+            scene_must_include = [c for c in scene_cands if c.timestamp in must_include_timestamps]
+            remaining_slots = self.max_frames_per_scene - len(scene_must_include)
+            
             if len(scene_cands) <= self.max_frames_per_scene:
                 # Keep all frames in small scenes
                 for cand in scene_cands:
                     cand.is_representative = True
                 selected.extend(scene_cands)
             else:
-                # Cluster and select
-                reps = self._select_representatives(scene_cands)
-                selected.extend(reps)
+                # Add must_include frames
+                selected.extend(scene_must_include)
+                
+                # Cluster and select from remaining frames
+                remaining_cands = [c for c in scene_cands if c.timestamp not in must_include_timestamps]
+                
+                if remaining_slots > 0 and remaining_cands:
+                    # Adjust max_frames for this scene
+                    original_max = self.max_frames_per_scene
+                    self.max_frames_per_scene = remaining_slots
+                    
+                    reps = self._select_representatives(remaining_cands)
+                    selected.extend(reps)
+                    
+                    # Restore original max
+                    self.max_frames_per_scene = original_max
         
-        # Enforce minimum temporal gap
-        selected = self._enforce_temporal_gap(selected)
+        # Remove duplicates (in case first/last are in same scene)
+        unique_selected = []
+        seen_timestamps = set()
         
-        logger.info(f"Selected {len(selected)} representatives from {len(candidates)} candidates")
+        for cand in selected:
+            if cand.timestamp not in seen_timestamps:
+                unique_selected.append(cand)
+                seen_timestamps.add(cand.timestamp)
         
-        return selected
+        # Sort by timestamp
+        unique_selected.sort(key=lambda x: x.timestamp)
+        
+        # Enforce minimum temporal gap (but preserve first and last)
+        unique_selected = self._enforce_temporal_gap(unique_selected)
+        
+        logger.info(f"Selected {len(unique_selected)} representatives from {len(candidates)} candidates")
+        
+        return unique_selected
     
     def _select_representatives(
         self,
@@ -224,18 +263,34 @@ class TemporalClusterer:
         self,
         frames: List[FrameCandidate]
     ) -> List[FrameCandidate]:
-        """Remove frames that are too close temporally."""
+        """
+        Remove frames that are too close temporally.
+        ALWAYS preserves first and last frame.
+        """
         if not frames:
             return []
         
         # Sort by timestamp
         sorted_frames = sorted(frames, key=lambda x: x.timestamp)
         
-        # Keep first frame
-        kept = [sorted_frames[0]]
+        # ALWAYS keep first and last frame
+        if len(sorted_frames) <= 2:
+            return sorted_frames
         
-        for frame in sorted_frames[1:]:
+        first_frame = sorted_frames[0]
+        last_frame = sorted_frames[-1]
+        middle_frames = sorted_frames[1:-1]
+        
+        # Keep first frame
+        kept = [first_frame]
+        
+        # Filter middle frames
+        for frame in middle_frames:
             if frame.timestamp - kept[-1].timestamp >= self.min_temporal_gap_s:
                 kept.append(frame)
+        
+        # ALWAYS keep last frame (even if gap is small)
+        if last_frame.timestamp != kept[-1].timestamp:  # Avoid duplicate
+            kept.append(last_frame)
         
         return kept
