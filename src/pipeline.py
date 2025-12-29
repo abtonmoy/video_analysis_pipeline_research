@@ -1,3 +1,4 @@
+# src\pipeline.py
 """
 Main pipeline orchestrator for video advertisement analysis.
 """
@@ -22,10 +23,8 @@ from src.deduplication.hierarchical import create_deduplicator
 from src.selection.representative import create_selector 
 from src.selection.clustering import FrameCandidate
 from src.extraction.llm_client import create_extractor
-
 from dotenv import load_dotenv
 load_dotenv()
-
 logger = logging.getLogger(__name__)
 
 
@@ -35,11 +34,12 @@ class AdVideoPipeline:
     
     Pipeline stages:
     1. Video ingestion & metadata extraction
-    2. Lightweight change detection for candidate extraction
-    3. Scene boundary detection
+    2. Scene boundary detection (with fallback)
+    3. Lightweight change detection for candidate extraction
     4. Hierarchical deduplication (pHash → SSIM → CLIP)
-    5. Temporal clustering & representative selection
-    6. LLM extraction with temporal context
+    5. Audio event extraction (optional)
+    6. Temporal clustering & representative selection (density-based)
+    7. LLM extraction with temporal context
     """
     
     def __init__(
@@ -88,13 +88,29 @@ class AdVideoPipeline:
         return {
             "ingestion": {"max_resolution": 720, "extract_audio": True},
             "change_detection": {"method": "histogram", "threshold": 0.15, "min_interval_ms": 100},
-            "scene_detection": {"method": "content", "threshold": 27.0, "min_scene_length_s": 0.5},
+            "scene_detection": {
+                "method": "content",
+                "threshold": 27.0,
+                "min_scene_length_s": 0.5,
+                "fallback": {
+                    "enabled": True,
+                    "threshold": 15.0,
+                    "artificial_chunks": True,
+                    "chunk_size_s": 10.0
+                }
+            },
             "deduplication": {
                 "phash": {"enabled": True, "threshold": 8},
                 "ssim": {"enabled": True, "threshold": 0.92},
                 "clip": {"enabled": True, "model": "ViT-B-32", "threshold": 0.90, "device": "auto"}
             },
-            "selection": {"max_frames_per_scene": 3, "min_temporal_gap_s": 0.5},
+            "selection": {
+                "target_frame_density": 0.25,
+                "min_frames_per_scene": 2,
+                "max_frames_per_scene": 10,
+                "min_temporal_gap_s": 0.5,
+                "adaptive_density": True
+            },
             "extraction": {
                 "provider": "anthropic",
                 "model": "claude-sonnet-4-20250514",
@@ -148,10 +164,75 @@ class AdVideoPipeline:
             self._extractor = create_extractor(self.config)
         return self._extractor
     
+    def _detect_scenes_with_fallback(self, video_path: str, metadata) -> List[tuple]:
+        """
+        Detect scenes with automatic fallback for difficult videos.
+        
+        This method implements a 3-tier fallback strategy:
+        1. Try with default threshold (27.0)
+        2. Retry with lower threshold (15.0)
+        3. Create artificial chunks (10s each)
+        
+        Args:
+            video_path: Path to video file
+            metadata: Video metadata object
+            
+        Returns:
+            List of (start_time, end_time) tuples for each scene
+        """
+        # Try primary scene detection
+        scene_boundaries = self.scene_detector.detect_scenes(video_path)
+        
+        if scene_boundaries:
+            logger.info(f"Detected {len(scene_boundaries)} scenes")
+            return scene_boundaries
+        
+        # Fallback 1: Retry with lower threshold
+        fallback_config = self.config.get("scene_detection", {}).get("fallback", {})
+        
+        if fallback_config.get("enabled", True):
+            logger.warning("No scenes detected, retrying with lower threshold")
+            
+            fallback_threshold = fallback_config.get("threshold", 15.0)
+            
+            fallback_detector = SceneDetector(
+                method="content",
+                threshold=fallback_threshold,
+                min_scene_length_s=self.config.get("scene_detection", {}).get("min_scene_length_s", 0.5)
+            )
+            
+            scene_boundaries = fallback_detector.detect_scenes(video_path)
+            
+            if scene_boundaries:
+                logger.info(f"Fallback detected {len(scene_boundaries)} scenes with threshold={fallback_threshold}")
+                return scene_boundaries
+        
+        # Fallback 2: Create artificial chunks
+        if fallback_config.get("artificial_chunks", True):
+            logger.warning("Creating artificial scene chunks")
+            
+            duration = metadata.duration
+            chunk_size = fallback_config.get("chunk_size_s", 10.0)
+            
+            scene_boundaries = []
+            current_time = 0.0
+            
+            while current_time < duration:
+                end_time = min(current_time + chunk_size, duration)
+                scene_boundaries.append((current_time, end_time))
+                current_time = end_time
+            
+            logger.info(f"Created {len(scene_boundaries)} artificial scenes ({chunk_size}s each)")
+            return scene_boundaries
+        
+        # Ultimate fallback: Entire video as one scene
+        logger.warning("Using entire video as single scene")
+        return [(0.0, metadata.duration)]
+    
     def process(
         self,
         video_path: str,
-        skip_extraction: bool = False
+        skip_extraction: bool = True
     ) -> PipelineResult:
         """
         Process a single video through the pipeline.
@@ -172,13 +253,9 @@ class AdVideoPipeline:
         logger.info("Stage 1: Loading video...")
         metadata, audio_path = self.loader.load(video_path)
         
-        # Stage 2: Detect scenes
+        # Stage 2: Detect scenes (with fallback)
         logger.info("Stage 2: Detecting scenes...")
-        scene_boundaries = self.scene_detector.detect_scenes(video_path)
-        
-        if not scene_boundaries:
-            # Fallback: treat entire video as one scene
-            scene_boundaries = [(0.0, metadata.duration)]
+        scene_boundaries = self._detect_scenes_with_fallback(video_path, metadata)
         
         # Stage 3: Extract candidate frames
         logger.info("Stage 3: Extracting candidate frames...")
@@ -207,13 +284,13 @@ class AdVideoPipeline:
         audio_events = None
         if audio_path:
             try:
-                logger.info("Extracting audio events...")
+                logger.info("Stage 5: Extracting audio events...")
                 audio_events = self.audio_extractor.get_audio_events(audio_path)
             except Exception as e:
                 logger.warning(f"Audio event extraction failed: {e}")
         
-        # Stage 6: Select representatives
-        logger.info("Stage 5: Selecting representative frames...")
+        # Stage 6: Select representatives (density-based)
+        logger.info("Stage 6: Selecting representative frames...")
         selected_candidates = self.selector.select(
             frames=deduped_frames,
             embeddings=embeddings,
@@ -228,7 +305,7 @@ class AdVideoPipeline:
         # Stage 7: LLM Extraction
         extraction_result = None
         if not skip_extraction and selected_frames:
-            logger.info("Stage 6: LLM extraction...")
+            logger.info("Stage 7: LLM extraction...")
             try:
                 extraction_result = self.extractor.extract(
                     frames=selected_frames,
@@ -286,34 +363,30 @@ class AdVideoPipeline:
         max_workers: int = 4,
         skip_extraction: bool = False
     ) -> List[PipelineResult]:
-        """Process multiple videos in parallel."""
+        """
+        Process multiple videos in parallel.
         
-        logger.info(f"Processing batch of {len(video_paths)} videos with {max_workers} workers")
+        Args:
+            video_paths: List of video file paths
+            max_workers: Number of parallel workers (currently sequential)
+            skip_extraction: If True, skip LLM extraction
+            
+        Returns:
+            List of PipelineResult objects
+        """
+        logger.info(f"Processing batch of {len(video_paths)} videos with {max_workers} worker(s)")
         
         results = []
         
-        if max_workers == 1:
-            # Sequential processing
-            for video_path in video_paths:
-                try:
-                    result = self.process(video_path, skip_extraction=skip_extraction)
-                    results.append(result)
-                except Exception as e:
-                    logger.error(f"Failed to process {video_path}: {e}")
-                    results.append(None)
-        else:
-            # TRUE parallel processing
-            from concurrent.futures import ThreadPoolExecutor  # Use threads instead of processes
-            
-            def process_single(video_path):
-                try:
-                    return self.process(video_path, skip_extraction=skip_extraction)
-                except Exception as e:
-                    logger.error(f"Failed to process {video_path}: {e}")
-                    return None
-            
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                results = list(executor.map(process_single, video_paths))
+        # Sequential processing to avoid multiprocessing issues with CLIP/LLM
+        # In production, would use proper multiprocessing with serializable config
+        for video_path in video_paths:
+            try:
+                result = self.process(video_path, skip_extraction=skip_extraction)
+                results.append(result)
+            except Exception as e:
+                logger.error(f"Failed to process {video_path}: {e}")
+                results.append(None)
         
         successful = sum(1 for r in results if r is not None)
         logger.info(f"Batch complete: {successful}/{len(video_paths)} videos processed successfully")

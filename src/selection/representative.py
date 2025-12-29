@@ -1,3 +1,4 @@
+# src\selection\representative.py
 """
 Representative frame selection with importance scoring.
 """
@@ -126,15 +127,21 @@ class FrameSelector:
     
     def __init__(
         self,
-        max_frames_per_scene: int = 3,
+        target_frame_density: float = 0.25,
+        min_frames_per_scene: int = 2,
+        max_frames_per_scene: int = 10,
         min_temporal_gap_s: float = 0.5,
         clustering_method: str = "kmeans",
+        adaptive_density: bool = True,
         use_importance_scoring: bool = True
     ):
         self.clusterer = TemporalClusterer(
+            target_frame_density=target_frame_density,
+            min_frames_per_scene=min_frames_per_scene,
             max_frames_per_scene=max_frames_per_scene,
             min_temporal_gap_s=min_temporal_gap_s,
-            clustering_method=clustering_method
+            clustering_method=clustering_method,
+            adaptive_density=adaptive_density
         )
         self.scorer = ImportanceScorer() if use_importance_scoring else None
     
@@ -178,13 +185,16 @@ class FrameSelector:
         return selected
 
 
-def create_selector(config: Dict) -> FrameSelector:
-    """Create FrameSelector from config dict."""
+def create_selector(config: Dict) -> 'FrameSelector':
+    """Create FrameSelector from configuration."""
     selection_config = config.get("selection", {})
     
     return FrameSelector(
-        max_frames_per_scene=selection_config.get("max_frames_per_scene", 3),
+        target_frame_density=selection_config.get("target_frame_density", 0.25),
+        min_frames_per_scene=selection_config.get("min_frames_per_scene", 2),
+        max_frames_per_scene=selection_config.get("max_frames_per_scene", 10),
         min_temporal_gap_s=selection_config.get("min_temporal_gap_s", 0.5),
-        clustering_method=selection_config.get("method", "clustering"),
-        use_importance_scoring=True
+        clustering_method=selection_config.get("clustering_method", "kmeans"),
+        adaptive_density=selection_config.get("adaptive_density", True),
+        use_importance_scoring=selection_config.get("use_importance_scoring", True)
     )

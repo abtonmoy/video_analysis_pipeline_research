@@ -1,4 +1,4 @@
-# tests/pipeline.py
+# experiments/pipeline.py
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,8 +8,19 @@ import json
 def main():
     print("Test pipeline")
     
-    pipeline = AdVideoPipeline(config_path="config/default.yaml")
-    video = "data/ads/ads/videos/v0017.mp4"
+    pipeline = AdVideoPipeline(
+    config_path="config/default.yaml"
+    # overrides={
+    #     "scene_detection": {
+    #         "threshold": 20.0  # Lower threshold
+    #     },
+    #     "selection": {
+    #         "max_frames_per_scene": 6,  # More frames
+    #         "min_temporal_gap_s": 3.0   # Larger gap
+    #     }
+    # }
+)
+    video = r"data\hussain_videos\zwY6acYYO3o.mp4"
     
     result = pipeline.process(
         video,

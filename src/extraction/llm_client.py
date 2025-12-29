@@ -1,3 +1,4 @@
+#src\extraction\llm_client.py
 """
 LLM clients and extraction orchestration.
 """
@@ -144,7 +145,7 @@ class GeminiClient(BaseLLMClient):
     
     def __init__(
         self,
-        model: str = "gemini-2.0-flash-exp",
+        model: str = "gemini-3.0-flash-exp", #gemini-2.0-flash-exp  
         max_tokens: int = 2000,
         temperature: float = 0.0
     ):

@@ -1,3 +1,4 @@
+# src\extraction\schema.py
 """
 Schema definitions for ad content extraction.
 """

@@ -1,5 +1,6 @@
+#src\selection\clustering.py
 """
-Temporal clustering for frame selection.
+Temporal clustering for frame selection with adaptive density-based allocation.
 """
 
 import logging
@@ -24,18 +25,27 @@ class FrameCandidate:
 
 class TemporalClusterer:
     """
-    Cluster frames within scenes and select representatives.
+    Cluster frames within scenes and select representatives using density-based allocation.
+    
+    Instead of fixed frames per scene, allocates frames proportionally to scene duration.
+    This ensures long scenes get adequate coverage while short scenes aren't oversampled.
     """
     
     def __init__(
         self,
-        max_frames_per_scene: int = 3,
+        target_frame_density: float = 0.25,  # ~1 frame every 4 seconds
+        min_frames_per_scene: int = 2,
+        max_frames_per_scene: int = 10,
         min_temporal_gap_s: float = 0.5,
-        clustering_method: str = "kmeans"
+        clustering_method: str = "kmeans",
+        adaptive_density: bool = True
     ):
+        self.target_density = target_frame_density
+        self.min_frames_per_scene = min_frames_per_scene
         self.max_frames_per_scene = max_frames_per_scene
         self.min_temporal_gap_s = min_temporal_gap_s
         self.clustering_method = clustering_method
+        self.adaptive_density = adaptive_density
     
     def assign_scenes(
         self,
@@ -85,7 +95,7 @@ class TemporalClusterer:
         embeddings: Optional[np.ndarray] = None
     ) -> List[FrameCandidate]:
         """
-        Cluster frames within each scene and select representatives.
+        Cluster frames within each scene and select representatives using density-based allocation.
         
         Args:
             candidates: List of FrameCandidate with scene_id assigned
@@ -110,7 +120,6 @@ class TemporalClusterer:
         first_frame.is_representative = True
         last_frame.is_representative = True
         
-        # Track must-include timestamps (not objects, since they're not hashable)
         must_include_timestamps = {first_frame.timestamp, last_frame.timestamp}
         
         # Group by scene
@@ -121,38 +130,55 @@ class TemporalClusterer:
                 scene_frames[scene_id] = []
             scene_frames[scene_id].append(cand)
         
-        # Select representatives from each scene
+        # Select representatives from each scene with density-based allocation
         selected = []
         
         for scene_id in sorted(scene_frames.keys()):
             scene_cands = scene_frames[scene_id]
             
-            # Check how many must_include frames are in this scene
-            scene_must_include = [c for c in scene_cands if c.timestamp in must_include_timestamps]
-            remaining_slots = self.max_frames_per_scene - len(scene_must_include)
+            # Calculate scene duration
+            scene_start = min(c.timestamp for c in scene_cands)
+            scene_end = max(c.timestamp for c in scene_cands)
+            scene_duration = scene_end - scene_start
             
-            if len(scene_cands) <= self.max_frames_per_scene:
+            # Adaptive density based on scene characteristics
+            if self.adaptive_density:
+                density = self._calculate_adaptive_density(scene_cands, self.target_density)
+            else:
+                density = self.target_density
+            
+            # Calculate target frame count based on density
+            target_count = int(scene_duration * density)
+            
+            # Apply constraints
+            n_frames = max(
+                self.min_frames_per_scene,
+                min(target_count, self.max_frames_per_scene, len(scene_cands))
+            )
+            
+            logger.debug(f"Scene {scene_id}: duration={scene_duration:.1f}s, "
+                        f"density={density:.2f}, target={target_count}, "
+                        f"final={n_frames} frames")
+            
+            # Check how many must-include frames are in this scene
+            scene_must_include = [c for c in scene_cands if c.timestamp in must_include_timestamps]
+            remaining_slots = n_frames - len(scene_must_include)
+            
+            if len(scene_cands) <= n_frames:
                 # Keep all frames in small scenes
                 for cand in scene_cands:
                     cand.is_representative = True
                 selected.extend(scene_cands)
             else:
-                # Add must_include frames
+                # Add must-include frames
                 selected.extend(scene_must_include)
                 
                 # Cluster and select from remaining frames
                 remaining_cands = [c for c in scene_cands if c.timestamp not in must_include_timestamps]
                 
                 if remaining_slots > 0 and remaining_cands:
-                    # Adjust max_frames for this scene
-                    original_max = self.max_frames_per_scene
-                    self.max_frames_per_scene = remaining_slots
-                    
-                    reps = self._select_representatives(remaining_cands)
+                    reps = self._select_representatives(remaining_cands, remaining_slots)
                     selected.extend(reps)
-                    
-                    # Restore original max
-                    self.max_frames_per_scene = original_max
         
         # Remove duplicates (in case first/last are in same scene)
         unique_selected = []
@@ -173,9 +199,56 @@ class TemporalClusterer:
         
         return unique_selected
     
+    def _calculate_adaptive_density(self, scene_cands: List[FrameCandidate], base_density: float) -> float:
+        """
+        Adjust density based on scene complexity.
+        
+        High variance scenes (lots of changes) get more frames.
+        Low variance scenes (static) get fewer frames.
+        """
+        if len(scene_cands) < 2:
+            return base_density
+        
+        # Compute frame variance (how much changes within scene)
+        variance = self._compute_frame_variance([c.frame for c in scene_cands])
+        
+        # Adjust density based on variance
+        if variance > 0.15:  # High complexity
+            adjusted_density = base_density * 1.3
+            logger.debug(f"High variance ({variance:.3f}), increasing density to {adjusted_density:.3f}")
+        elif variance < 0.05:  # Low complexity
+            adjusted_density = base_density * 0.7
+            logger.debug(f"Low variance ({variance:.3f}), decreasing density to {adjusted_density:.3f}")
+        else:
+            adjusted_density = base_density
+        
+        return adjusted_density
+    
+    def _compute_frame_variance(self, frames: List[np.ndarray]) -> float:
+        """Compute variance across frames (pixel-based)."""
+        if len(frames) < 2:
+            return 0.0
+        
+        # Sample frames if too many (for efficiency)
+        if len(frames) > 10:
+            step = len(frames) // 10
+            frames = frames[::step]
+        
+        variances = []
+        for i in range(len(frames) - 1):
+            # Convert to grayscale for efficiency
+            gray1 = np.mean(frames[i], axis=2) if frames[i].ndim == 3 else frames[i]
+            gray2 = np.mean(frames[i+1], axis=2) if frames[i+1].ndim == 3 else frames[i+1]
+            
+            diff = np.abs(gray1.astype(float) - gray2.astype(float))
+            variances.append(np.mean(diff) / 255.0)
+        
+        return np.mean(variances)
+    
     def _select_representatives(
         self,
-        scene_frames: List[FrameCandidate]
+        scene_frames: List[FrameCandidate],
+        n_clusters: int
     ) -> List[FrameCandidate]:
         """Select representative frames from a scene using clustering."""
         
@@ -183,18 +256,19 @@ class TemporalClusterer:
         has_embeddings = all(f.embedding is not None for f in scene_frames)
         
         if has_embeddings and self.clustering_method == "kmeans":
-            return self._kmeans_selection(scene_frames)
+            return self._kmeans_selection(scene_frames, n_clusters)
         else:
-            return self._uniform_selection(scene_frames)
+            return self._uniform_selection(scene_frames, n_clusters)
     
     def _kmeans_selection(
         self,
-        scene_frames: List[FrameCandidate]
+        scene_frames: List[FrameCandidate],
+        n_clusters: int
     ) -> List[FrameCandidate]:
         """Use K-means clustering to select representatives."""
         from sklearn.cluster import KMeans
         
-        n_clusters = min(self.max_frames_per_scene, len(scene_frames))
+        n_clusters = min(n_clusters, len(scene_frames))
         
         # Stack embeddings
         embeddings = np.array([f.embedding for f in scene_frames])
@@ -217,18 +291,13 @@ class TemporalClusterer:
             centroid = kmeans.cluster_centers_[cluster_id]
             
             # Find closest frame
-            min_dist = float('inf')
-            best_frame = None
+            best_frame = min(
+                cluster_frames,
+                key=lambda f: np.linalg.norm(f.embedding - centroid)
+            )
             
-            for frame in cluster_frames:
-                dist = np.linalg.norm(frame.embedding - centroid)
-                if dist < min_dist:
-                    min_dist = dist
-                    best_frame = frame
-            
-            if best_frame:
-                best_frame.is_representative = True
-                selected.append(best_frame)
+            best_frame.is_representative = True
+            selected.append(best_frame)
         
         # Sort by timestamp
         selected.sort(key=lambda x: x.timestamp)
@@ -237,10 +306,11 @@ class TemporalClusterer:
     
     def _uniform_selection(
         self,
-        scene_frames: List[FrameCandidate]
+        scene_frames: List[FrameCandidate],
+        n_select: int
     ) -> List[FrameCandidate]:
         """Uniformly select frames across the scene."""
-        n_select = min(self.max_frames_per_scene, len(scene_frames))
+        n_select = min(n_select, len(scene_frames))
         
         # Sort by timestamp
         sorted_frames = sorted(scene_frames, key=lambda x: x.timestamp)

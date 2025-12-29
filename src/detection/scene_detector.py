@@ -1,4 +1,4 @@
-
+# src\detection\scene_detector.py
 import logging
 from typing import List, Tuple, Optional
 from abc import ABC, abstractmethod

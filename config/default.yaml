@@ -1,7 +1,9 @@
-# Pipeline configuration
+#config/default.yaml
+
+# Pipeline configuration with density-based adaptive frame selection
 pipeline:
   name: "adaptive-ad-pipeline"
-  version: "1.0.0"
+  version: "2.0.0"
 
 # Video ingestion
 ingestion:
@@ -14,11 +16,18 @@ change_detection:
   threshold: 0.15
   min_interval_ms: 100 # Minimum time between candidates
 
-# Scene detection
+# Scene detection with fallback
 scene_detection:
   method: "content" # Options: content, threshold, transnet
   threshold: 27.0
   min_scene_length_s: 0.5
+
+  # Fallback when no scenes detected (e.g., static/dark videos)
+  fallback:
+    enabled: true
+    threshold: 15.0 # Much lower threshold for retry
+    artificial_chunks: true # If still no scenes, split into chunks
+    chunk_size_s: 10.0 # Size of artificial chunks
 
 # Hierarchical deduplication
 deduplication:
@@ -32,21 +41,40 @@ deduplication:
     enabled: true
     model: "ViT-B/32"
     threshold: 0.90
-    device: "cpu" # Options: cuda, cpu
+    device: "cpu" # Options: cuda, cpu, auto
     batch_size: 32 # GPU batching for efficiency
 
-# Representative selection
+# Representative selection (DENSITY-BASED - NEW!)
 selection:
   method: "clustering" # Options: clustering, uniform, first
-  max_frames_per_scene: 3
-  min_temporal_gap_s: 0.5
+
+  # Density-based allocation (replaces fixed max_frames_per_scene)
+  # Allocates frames proportionally to scene duration
+  target_frame_density:
+    0.25 # ~1 frame every 4 seconds of scene duration
+    # Examples:
+    #   10s scene → 2-3 frames
+    #   30s scene → 7-8 frames
+    #   60s scene → 10 frames (capped)
+
+  # Per-scene constraints
+  min_frames_per_scene: 2 # Always capture at least start/end
+  max_frames_per_scene: 10 # Cap for very long scenes (40s+)
+
+  # Temporal constraints
+  min_temporal_gap_s: 0.5 # Minimum time between selected frames
+
+  # Adaptive density based on scene complexity
+  adaptive_density:
+    true # Adjust density based on frame variance
+    # High variance (action) → 30% more frames
+    # Low variance (static) → 30% fewer frames
 
 # LLM extraction
 extraction:
-  extraction:
-  provider: "gemini"
+  provider: "gemini" # Options: anthropic, openai, gemini
   model: "gemini-2.0-flash-exp"
-  # provider: "anthropic" # Options: anthropic, openai, google
+  # provider: "anthropic"
   # model: "claude-sonnet-4-20250514"
   max_tokens: 2000
   temperature: 0.0
@@ -74,7 +102,7 @@ extraction:
 # Batch processing
 batch:
   enabled: true
-  max_workers: 4 # Number of parallel video processors
+  max_workers: 1 # Sequential to avoid multiprocessing issues
   gpu_batch_size: 32 # CLIP embedding batch size
 
 # Evaluation
@@ -85,3 +113,8 @@ evaluation:
     - processing_time
     - extraction_accuracy
   save_intermediate: true
+
+# Logging
+logging:
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR
+  log_file: null # Set path to enable file logging

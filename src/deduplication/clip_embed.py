@@ -1,3 +1,5 @@
+# src\deduplication\clip_embed.py
+
 import logging
 from typing import List, Tuple, Optional, Dict, Any
 from abc import ABC, abstractmethod

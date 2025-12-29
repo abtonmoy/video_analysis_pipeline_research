@@ -1,1959 +1,1082 @@
-# Adaptive Video Advertisement Analysis Pipeline:
+# Cascaded Semantic Deduplication with Adaptive Density Selection for Efficient Video-Language Model Inference
 
-# Token-Efficient Video Understanding: A Hierarchical Cascade for Cost-Aware LLM Inference
+## Abstract
 
-## Project Overview
+This project presents a novel multi-stage pipeline for automated analysis of video advertisements that addresses the computational inefficiency of dense frame sampling in vision-language model (VLM) extraction tasks. Traditional approaches that uniformly sample frames result in redundant information extraction and excessive API costs. Our pipeline introduces a hierarchical deduplication framework combined with adaptive density-based frame selection that achieves 80-85% frame reduction while maintaining semantic completeness. The system employs perceptual hashing (pHash), structural similarity index (SSIM), and CLIP embeddings in a cascading architecture, followed by temporal clustering with scene-aware importance scoring. Experimental results on political and commercial advertisements demonstrate effective content extraction with significant cost reduction.
 
-This research project develops an **efficient, hierarchical frame extraction pipeline** for analyzing video advertisements using Large Language Models (LLMs). The core innovation is reducing computational cost and API usage by 80-99% while maintaining extraction quality through intelligent, multi-stage frame selection.
+## Table of Contents
 
-### Research Question
+- [Introduction](#introduction)
+- [System Architecture](#system-architecture)
+- [Mathematical Framework](#mathematical-framework)
+- [Pipeline Stages](#pipeline-stages)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Experimental Results](#experimental-results)
+- [Technical Implementation](#technical-implementation)
+- [Performance Metrics](#performance-metrics)
+- [Future Work](#future-work)
+- [Citation](#citation)
 
-> Can we significantly reduce the number of frames sent to vision-language models for advertisement analysis while preserving (or improving) the quality of extracted insights?
+## Introduction
 
-### Key Results (Achieved)
+### Problem Statement
 
-- **98.9% frame reduction**: 450 frames to 5 frames (15-second video at 30fps)
-- **80.8% cost reduction**: Hierarchical deduplication eliminates redundant frames
-- **Sub-minute processing**: 21 seconds for full pipeline (15-second video)
-- **Production-ready**: Modular architecture with config-driven behavior
+Video advertisement analysis faces a fundamental trade-off between sampling density and computational cost. Dense frame sampling (e.g., one frame per 100ms) captures temporal dynamics but generates highly redundant data, while sparse sampling risks missing critical narrative moments. For a 60-second video at 30 fps (1,800 total frames), dense sampling at 100ms intervals yields 600 frames, of which the majority contain redundant or uninformative content.
 
-### Target Publication Venues
+The inefficiency is compounded when using Vision-Language Models (VLMs) for content extraction:
 
-- **Primary:** ICME, MMM, WACV, ACM Multimedia workshops
-- **Reach:** ACM MM, ECCV workshops
+- API costs scale linearly with frame count
+- Processing time increases proportionally
+- Redundant frames provide diminishing returns for semantic understanding
 
----
+### Proposed Solution
 
-## Problem Statement
+We introduce a seven-stage pipeline that combines:
 
-### Current Approach (Naive Pipeline)
+1. **Hierarchical Deduplication**: Three-tier filtering using pHash → SSIM → CLIP
+2. **Adaptive Density-Based Selection**: Scene-duration-proportional frame allocation
+3. **Temporal Clustering**: K-means clustering in CLIP embedding space
+4. **Importance Scoring**: Multi-factor frame significance assessment
+5. **Adaptive Schema Extraction**: Type-aware structured information extraction
 
-```
-Video → Fixed-interval sampling (e.g., 1 frame/0.3s) → CLIP embedding →
-Cosine similarity deduplication → LLM Vision API → Insights
-```
+Our approach achieves 80-85% frame reduction while preserving narrative coherence, resulting in proportional API cost savings and processing time reduction.
 
-**Problems:**
+## System Architecture
 
-1. **Wasteful extraction:** Many frames extracted only to be discarded
-2. **Arbitrary thresholds:** 0.3s interval is content-agnostic
-3. **Expensive deduplication:** CLIP embeddings computed for all frames before filtering
-4. **No temporal awareness:** Similarity computed pairwise without scene context
-5. **High API costs:** More frames = more tokens = higher costs
-
-### Proposed Approach (Hierarchical Pipeline)
-
-```
-Video → Lightweight change detection → Adaptive sampling →
-Hierarchical deduplication (pHash → SSIM → CLIP) →
-Temporal clustering → Importance scoring → LLM Vision API → Insights
-```
-
-**Improvements:**
-
-1. **Smart extraction:** Only extract frames when content changes significantly
-2. **Content-adaptive:** Sampling rate responds to video dynamics
-3. **Cheap-to-expensive filtering:** Use fast methods first, expensive methods last
-4. **Scene-aware:** Respect narrative structure of advertisements
-5. **Temporal reasoning:** LLM sees chronological frames with position labels
-6. **Cost-efficient:** Fewer, more informative frames sent to LLM
-
----
-
-## Key Features Summary
-
-| Feature                        | Status         | Description                                             |
-| ------------------------------ | -------------- | ------------------------------------------------------- |
-| **Hierarchical Deduplication** | ✅ Implemented | pHash → SSIM → CLIP (cheap to expensive)                |
-| **Scene-Aware Selection**      | ✅ Implemented | Respects narrative structure via scene detection        |
-| **Batch Processing**           | ✅ Implemented | Parallel video processing + GPU-batched CLIP            |
-| **Temporal Reasoning**         | ✅ Implemented | Multi-frame prompts with timestamps & narrative context |
-| **Adaptive Schema**            | ✅ Implemented | Two-pass extraction with type-specific schemas          |
-| **First/Last Frame Guarantee** | ✅ Implemented | Always includes opening (brand) and closing (CTA)       |
-| **Multi-Provider LLM**         | ✅ Implemented | Claude, GPT-4V, Gemini support                          |
-| **Importance Scoring**         | ✅ Implemented | Position + scene + audio based weighting                |
-| **Multilingual Support**       | 🟡 Planned     | Swap to multilingual OCR/ASR models                     |
-| **Audio-Visual Fusion**        | 🟡 Partial     | Audio events extracted, fusion in progress              |
-| **Streaming Processing**       | 🔴 Future      | Requires architecture redesign                          |
-| **Learned Thresholds**         | 🔴 Future      | Requires meta-learning research                         |
-
----
-
-## Technical Architecture
-
-### Complete Pipeline Flow
+### High-Level Pipeline
 
 ```
-Stage 1: Video Ingestion
-    └─> Extract metadata, audio track, video statistics
-         ↓
-Stage 2: Scene Detection
-    └─> PySceneDetect identifies scene boundaries
-         ↓
-Stage 3: Candidate Extraction
-    └─> Change detector (Histogram/Edge/FrameDiff) samples frames
-         ↓ (26 candidates from 450 total frames - 94.2% reduction)
-Stage 4: Hierarchical Deduplication
-    ├─> PHash:  26 → 22 frames (15% reduction, <1ms/frame)
-    ├─> SSIM:   22 → 21 frames (5% reduction, ~5ms/pair)
-    └─> CLIP:   21 → 10 frames (52% reduction, ~50ms/frame)
-         ↓
-Stage 5: Audio Event Extraction (Optional)
-    └─> Detect energy peaks, silence segments
-         ↓
-Stage 6: Representative Selection
-    ├─> Assign frames to scenes
-    ├─> Score importance (position + audio + scene context)
-    ├─> Cluster within scenes (K-means on CLIP embeddings)
-    ├─> Select representatives (closest to centroids)
-    └─> Enforce temporal gaps + guarantee first/last frames
-         ↓ (10 → 5 final frames - 50% reduction)
-Stage 7: LLM Extraction
-    ├─> Two-pass adaptive schema (detect ad type, then extract)
-    ├─> Temporal prompt with timestamps and position labels
-    └─> Vision-language model (Claude/GPT/Gemini)
-         ↓
-Structured Ad Data (JSON)
+┌─────────────────────────────────────────────────────────────────────┐
+│                     INPUT: Video Advertisement                      │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 1: Video Ingestion & Preprocessing                            │
+│  - Video metadata extraction (duration, fps, resolution)            │
+│  - Optional audio extraction for multimodal analysis                │
+│  - Resolution downscaling (max 720p) for efficiency                 │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 2: Scene Detection                                            │
+│  - PySceneDetect ContentDetector (threshold = 27.0)                 │
+│  - Minimum scene length: 0.5s                                       │
+│  - Fallback mechanisms for static/dark videos                       │
+│  Output: Scene boundaries [(t_start, t_end), ...]                   │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 3: Candidate Frame Extraction                                 │
+│  - Histogram-based change detection (threshold = 0.15)              │
+│  - Sampling interval: 50ms                                          │
+│  - Minimum temporal gap: 100ms                                      │
+│  Output: Candidate frames C = {(t_i, f_i)}                          │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 4: Hierarchical Deduplication                                 │
+│                                                                      │
+│  Step 4.1: Perceptual Hashing (pHash)                               │
+│    - 8x8 DCT-based hash, Hamming distance ≤ 8                       │
+│    - Complexity: O(n²) comparisons, ~2ms per frame                  │
+│                                                                      │
+│  Step 4.2: Structural Similarity Index (SSIM)                       │
+│    - Threshold: 0.92 on grayscale 256x256                           │
+│    - Complexity: O(n² × w × h), ~50ms per comparison                │
+│                                                                      │
+│  Step 4.3: CLIP Semantic Embeddings                                 │
+│    - Model: ViT-B/32 (512-dimensional embeddings)                   │
+│    - Cosine similarity threshold: 0.90                              │
+│    - Batch processing: 32 frames per batch                          │
+│    - Complexity: O(n × d) for embedding, O(n²) for comparison       │
+│                                                                      │
+│  Output: Deduplicated frames D ⊂ C, embeddings E ∈ R^(|D| × 512)   │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 5: Audio Event Extraction (Optional)                          │
+│  - RMS energy peak detection (90th percentile)                      │
+│  - Silence detection (threshold: -40dB, min duration: 0.3s)         │
+│  Output: Audio events A = {peaks, silences}                         │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 6: Representative Frame Selection                             │
+│                                                                      │
+│  Step 6.1: Scene Assignment                                         │
+│    - Map each frame to nearest scene by timestamp                   │
+│                                                                      │
+│  Step 6.2: Adaptive Density Calculation                             │
+│    - Base density: ρ₀ = 0.25 frames/second                          │
+│    - Scene variance: σ_s = var(frame differences)                   │
+│    - Adjusted density: ρ_s = ρ₀ × α(σ_s)                            │
+│      where α(σ_s) = 1.3 if σ_s > 0.15 (high motion)                │
+│                   = 0.7 if σ_s < 0.05 (static)                      │
+│                   = 1.0 otherwise                                    │
+│                                                                      │
+│  Step 6.3: Target Frame Allocation                                  │
+│    - Per scene s: n_s = ⌊duration_s × ρ_s⌋                          │
+│    - Constraints: 2 ≤ n_s ≤ 10, always include first & last frame   │
+│                                                                      │
+│  Step 6.4: Temporal Clustering (K-means)                            │
+│    - Input: CLIP embeddings E_s for scene s                         │
+│    - Clusters: k = n_s                                              │
+│    - Representative: argmin_i ||e_i - c_j|| for each cluster j      │
+│                                                                      │
+│  Step 6.5: Importance Scoring                                       │
+│    - Position score: w_p(t) = 1.5 if t < 0.1T (opening)             │
+│                              = 1.3 if t > 0.9T (closing)            │
+│    - Audio proximity: w_a(t) = 1.3 near energy peaks                │
+│    - Scene boundary: w_s(t) = 1.4 at scene start/end                │
+│    - Combined: I(f_i) = w_p(t_i) × w_a(t_i) × w_s(t_i)              │
+│                                                                      │
+│  Step 6.6: Temporal Gap Enforcement                                 │
+│    - Minimum gap: δ = 0.5s between selected frames                  │
+│    - Exception: preserve first and last frame always                │
+│                                                                      │
+│  Output: Selected frames S = {(t_i, f_i, s_i, I_i)}                 │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ Stage 7: LLM-Based Extraction                                       │
+│                                                                      │
+│  Step 7.1: Frame Encoding                                           │
+│    - Resize to max 512px, JPEG quality 85                           │
+│    - Base64 encoding for API transmission                           │
+│                                                                      │
+│  Step 7.2: Temporal Context Enrichment                              │
+│    - Timestamp annotations: Frame i @ t_i seconds                   │
+│    - Time deltas: Δt_i = t_i - t_(i-1)                              │
+│    - Position labels: [OPENING], [MIDDLE], [CLOSING]                │
+│                                                                      │
+│  Step 7.3: Ad Type Detection (Two-Pass)                             │
+│    - Pass 1: Classify into {product_demo, testimonial,              │
+│               brand_awareness, tutorial, entertainment}             │
+│    - Model: Gemini 2.0 Flash / Claude Sonnet 4                      │
+│                                                                      │
+│  Step 7.4: Structured Extraction                                    │
+│    - Base schema: {brand, message, creative_elements,               │
+│                    target_audience, persuasion_techniques}          │
+│    - Type-specific extensions (e.g., emotional_appeal for           │
+│      brand_awareness, product features for product_demo)            │
+│    - Temperature: 0.0 for deterministic extraction                  │
+│                                                                      │
+│  Output: Structured JSON with metadata                              │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     OUTPUT: Structured Analysis                      │
+│  - Brand identification                                              │
+│  - Message and call-to-action                                        │
+│  - Creative elements (colors, text overlays, music mood)             │
+│  - Target audience and persuasion techniques                         │
+│  - Type-specific insights                                            │
+│  - Processing metrics (reduction rate, timing)                       │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Measured Performance (15-second ad, v0002.mp4)
+## Mathematical Framework
 
-| Stage                    | Input      | Output | Reduction | Time      |
-| ------------------------ | ---------- | ------ | --------- | --------- |
-| Video (30fps)            | 450 frames | -      | -         | -         |
-| Candidate extraction     | 450        | 26     | 94.2%     | 5.4s      |
-| PHash dedup              | 26         | 22     | 15.4%     | <0.1s     |
-| SSIM dedup               | 22         | 21     | 4.5%      | 1.0s      |
-| CLIP dedup               | 21         | 10     | 52.4%     | 6.2s      |
-| Representative selection | 10         | 5      | 50.0%     | <0.1s     |
-| LLM extraction (Gemini)  | 5          | -      | -         | 7.3s      |
-| **Total**                | **450**    | **5**  | **98.9%** | **21.1s** |
+### 1. Change Detection
 
----
+We employ histogram-based change detection using chi-square distance:
 
-## Mathematical Foundations
-
-### Change Detection
-
-#### Frame Difference (L1 Norm)
-
-Measures pixel-level changes between consecutive frames:
-
-$$
-D_{L1}(f_t, f_{t+1}) = \frac{1}{HW} \sum_{i=1}^{H} \sum_{j=1}^{W} |I_t(i,j) - I_{t+1}(i,j)|
-$$
-
-where:
-
-- $I_t(i,j)$ is the grayscale intensity at pixel $(i,j)$ in frame $t$
-- $H, W$ are frame height and width
-- Normalized by frame size for scale invariance
-
-**Threshold:** Frame is a candidate if $D_{L1} > \tau_{diff}$ (typically 0.15)
-
-#### Histogram Difference (Chi-Square)
-
-Compares color distributions using Chi-Square distance:
-
-$$
-\chi^2(H_1, H_2) = \sum_{k=1}^{K} \frac{(H_1(k) - H_2(k))^2}{H_1(k) + H_2(k)}
-$$
-
-where:
-
-- $H_i(k)$ is the normalized frequency of bin $k$ in histogram $i$
-- $K$ is the total number of bins (typically $16 \times 16 \times 16 = 4096$ for RGB)
-- Normalized histograms: $\sum_{k=1}^{K} H_i(k) = 1$
-
-**Threshold:** Frame is a candidate if $\chi^2 > \tau_{hist}$ (typically 0.15)
-
-**Why Chi-Square?** Robust to illumination changes, captures color distribution shifts
-
-#### Edge Change Ratio
-
-Detects structural changes using Canny edge detection:
-
-$$
-R_{edge}(f_t, f_{t+1}) = \frac{|E_t \oplus E_{t+1}|}{|E_t \cup E_{t+1}|}
-$$
-
-where:
-
-- $E_t = \text{Canny}(f_t, \tau_{low}, \tau_{high})$ is the binary edge map
-- $\oplus$ is the XOR operation (symmetric difference)
-- $|\cdot|$ denotes the number of edge pixels
-
-**Threshold:** Frame is a candidate if $R_{edge} > \tau_{edge}$ (typically 0.20)
-
----
-
-### Hierarchical Deduplication
-
-#### Layer 1: Perceptual Hash (pHash)
-
-Computes a 64-bit perceptual hash using Discrete Cosine Transform (DCT):
-
-$$
-\text{pHash}(f) = \text{Binarize}(\text{DCT}_8(f_{32 \times 32}^{gray}))
-$$
-
-**Algorithm:**
-
-1. Resize frame to $32 \times 32$ grayscale: $f_{32 \times 32}^{gray}$
-2. Compute 2D DCT:
-   $$
-   D(u,v) = \sum_{x=0}^{31} \sum_{y=0}^{31} f(x,y) \cos\left[\frac{\pi u}{32}(x + 0.5)\right] \cos\left[\frac{\pi v}{32}(y + 0.5)\right]
-   $$
-3. Extract top-left $8 \times 8$ DCT coefficients (low frequencies)
-4. Compute median $m = \text{median}(D_{8 \times 8})$
-5. Binarize: $h_{ij} = \mathbb{1}[D_{ij} > m]$, producing 64-bit hash
-
-**Similarity Metric:** Hamming distance
-
-$$
-d_H(h_1, h_2) = \sum_{i=1}^{64} \mathbb{1}[h_1^i \neq h_2^i] = \text{popcount}(h_1 \oplus h_2)
-$$
-
-**Threshold:** Frames are duplicates if $d_H < \tau_{phash}$ (typically 8)
-
-**Complexity:** $O(1)$ per comparison (64-bit XOR and popcount)
-
-#### Layer 2: Structural Similarity Index (SSIM)
-
-Compares luminance, contrast, and structure:
-
-$$
-\text{SSIM}(x, y) = l(x,y) \cdot c(x,y) \cdot s(x,y)
-$$
-
-where:
-
-**Luminance comparison:**
-
-$$
-l(x,y) = \frac{2\mu_x\mu_y + C_1}{\mu_x^2 + \mu_y^2 + C_1}
-$$
-
-**Contrast comparison:**
-
-$$
-c(x,y) = \frac{2\sigma_x\sigma_y + C_2}{\sigma_x^2 + \sigma_y^2 + C_2}
-$$
-
-**Structure comparison:**
-
-$$
-s(x,y) = \frac{\sigma_{xy} + C_3}{\sigma_x\sigma_y + C_3}
-$$
-
-with:
-
-- $\mu_x, \mu_y$ = mean intensity of patches $x, y$
-- $\sigma_x, \sigma_y$ = standard deviation of patches
-- $\sigma_{xy}$ = covariance of patches
-- $C_1, C_2, C_3$ = stabilization constants (avoid division by zero)
-
-**Implementation:** SSIM is computed over sliding windows and averaged:
-
-$$
-\text{SSIM}(f_1, f_2) = \frac{1}{N} \sum_{i=1}^{N} \text{SSIM}(w_i^{(1)}, w_i^{(2)})
-$$
-
-where $w_i$ are $11 \times 11$ windows
-
-**Threshold:** Frames are duplicates if $\text{SSIM} > \tau_{ssim}$ (typically 0.92)
-
-**Range:** $\text{SSIM} \in [-1, 1]$, where 1 = identical
-
-**Complexity:** $O(HW)$ for sliding window convolution
-
-#### Layer 3: CLIP Semantic Similarity
-
-Uses vision transformer to embed frames into semantic space:
-
-$$
-\mathbf{z} = \text{Normalize}(\text{CLIP-ViT}(f))
-$$
-
-where:
-
-- $\text{CLIP-ViT}: \mathbb{R}^{H \times W \times 3} \to \mathbb{R}^{512}$ is the vision encoder
-- $\text{Normalize}(\mathbf{v}) = \frac{\mathbf{v}}{\|\mathbf{v}\|_2}$ produces unit vectors
-
-**CLIP Architecture (ViT-B/32):**
-
-1. Patch embedding: Split $224 \times 224$ image into $7 \times 7$ patches of $32 \times 32$ pixels
-2. Linear projection: $\mathbb{R}^{32 \times 32 \times 3} \to \mathbb{R}^{768}$
-3. Transformer encoder: 12 layers with multi-head self-attention
-4. Classification token pooling: Extract $\mathbf{z} \in \mathbb{R}^{512}$
-
-**Similarity Metric:** Cosine similarity
-
-$$
-\text{sim}(\mathbf{z}_1, \mathbf{z}_2) = \mathbf{z}_1^T \mathbf{z}_2 = \frac{\mathbf{z}_1 \cdot \mathbf{z}_2}{\|\mathbf{z}_1\| \|\mathbf{z}_2\|}
-$$
-
-Since embeddings are normalized, this simplifies to dot product.
-
-**Threshold:** Frames are duplicates if $\text{sim} > \tau_{clip}$ (typically 0.90)
-
-**Range:** $\text{sim} \in [-1, 1]$, where 1 = identical
-
-**Complexity:**
-
-- Encoding: $O(P^2 L d^2)$ where $P=49$ patches, $L=12$ layers, $d=768$ hidden dim
-- Comparison: $O(D)$ where $D=512$ embedding dimension
-
----
-
-### Temporal Clustering
-
-#### Scene Assignment
-
-Assign each frame to a scene based on temporal overlap:
-
-$$
-\text{scene}(f_t) = \arg\min_{s \in S} \begin{cases}
-0 & \text{if } t_s^{start} \leq t < t_s^{end} \\
-\min(|t - t_s^{start}|, |t - t_s^{end}|) & \text{otherwise}
-\end{cases}
-$$
-
-where:
-
-- $S = \{(t_s^{start}, t_s^{end})\}$ is the set of scene boundaries
-- Frames within boundaries assigned directly
-- Frames outside assigned to nearest boundary
-
-#### K-Means Clustering
-
-Within each scene, cluster frames by CLIP embeddings:
-
-**Objective:** Minimize within-cluster variance
-
-$$
-J = \sum_{i=1}^{k} \sum_{\mathbf{z} \in C_i} \|\mathbf{z} - \boldsymbol{\mu}_i\|^2
-$$
-
-where:
-
-- $k = \min(M, |F_s|)$ is number of clusters ($M$ = max_frames_per_scene)
-- $C_i$ is the $i$-th cluster
-- $\boldsymbol{\mu}_i = \frac{1}{|C_i|} \sum_{\mathbf{z} \in C_i} \mathbf{z}$ is the centroid
-
-**Algorithm (Lloyd's):**
-
-1. Initialize $k$ centroids randomly
-2. **Assignment step:** $C_i = \{\mathbf{z} : \|\mathbf{z} - \boldsymbol{\mu}_i\| \leq \|\mathbf{z} - \boldsymbol{\mu}_j\|, \forall j\}$
-3. **Update step:** $\boldsymbol{\mu}_i = \frac{1}{|C_i|} \sum_{\mathbf{z} \in C_i} \mathbf{z}$
-4. Repeat until convergence
-
-**Representative selection:** For each cluster, select frame closest to centroid:
-
-$$
-f_i^* = \arg\min_{f \in C_i} \|\mathbf{z}_f - \boldsymbol{\mu}_i\|
-$$
-
-**Complexity:** $O(nkd \cdot I)$ where $n$ = frames, $k$ = clusters, $d$ = dimensions, $I$ = iterations
-
----
-
-### Importance Scoring
-
-Compute importance score as product of multiple factors:
-
-$$
-\text{importance}(f_t) = w_{pos}(t) \cdot w_{scene}(t, s) \cdot w_{audio}(t, A)
-$$
-
-#### Position in Video Weight
-
-$$
-w_{pos}(t) = \begin{cases}
-1.5 & \text{if } \frac{t}{T} < 0.1 \text{ (opening)} \\
-2.0 & \text{if } \frac{t}{T} > 0.9 \text{ (closing)} \\
-2.5 & \text{if } \frac{t}{T} > 0.95 \text{ (final moments)} \\
-1.0 & \text{otherwise}
-\end{cases}
-$$
-
-where $T$ is video duration.
-
-**Rationale:** Opening introduces brand, closing shows CTA
-
-#### Position in Scene Weight
-
-$$
-w_{scene}(t, s) = \begin{cases}
-1.4 & \text{if } \frac{t - t_s^{start}}{t_s^{end} - t_s^{start}} < 0.15 \text{ (scene start)} \\
-1.2 & \text{if } \frac{t - t_s^{start}}{t_s^{end} - t_s^{start}} > 0.85 \text{ (scene end)} \\
-1.0 & \text{otherwise}
-\end{cases}
-$$
-
-**Rationale:** Scene boundaries mark narrative transitions
-
-#### Audio Event Weight
-
-$$
-w_{audio}(t, A) = \prod_{e \in A} w_e(t)
-$$
-
-where for each event type:
-
-**Energy peaks:**
-
-$$
-w_{peak}(t) = \begin{cases}
-1.3 & \text{if } \exists t_p \in T_{peaks}: |t - t_p| < \delta \\
-1.0 & \text{otherwise}
-\end{cases}
-$$
-
-**Post-silence:**
-
-$$
-w_{silence}(t) = \begin{cases}
-1.4 & \text{if } \exists (t_s^{start}, t_s^{end}) \in S_{silence}: t_s^{end} \leq t < t_s^{end} + \delta \\
-1.0 & \text{otherwise}
-\end{cases}
-$$
-
-where $\delta$ is proximity threshold (typically 0.5s)
-
-**Combined importance:** Multiplicative model allows multiple factors to compound
-
----
-
-### Temporal Gap Enforcement
-
-Ensure minimum time separation between selected frames while preserving first and last:
-
-**Algorithm:**
+Let H₁ and H₂ be normalized color histograms (bins=16) for consecutive frames:
 
 ```
-Input: Sorted frames F = {f_1, ..., f_n}, gap threshold τ
-Output: Filtered frames F' ⊆ F
-
-1. Initialize F' = {f_1}  // Always keep first
-2. For i = 2 to n-1:
-3.   If t_i - t_{last} ≥ τ:
-4.     F' = F' ∪ {f_i}
-5.     last = i
-6. F' = F' ∪ {f_n}  // Always keep last
-7. Return F'
+χ²(H₁, H₂) = Σᵢ (H₁(i) - H₂(i))² / (H₁(i) + H₂(i))
 ```
 
-**Mathematical formulation:**
+A frame pair exhibits significant change if χ²(H₁, H₂) > τ_change, where τ_change = 0.15.
 
-$$
-F' = \{f_1\} \cup \{f_i : 1 < i < n, \min_{j \in F', j < i}(t_i - t_j) \geq \tau\} \cup \{f_n\}
-$$
+### 2. Perceptual Hashing
 
-**Greedy property:** This greedy algorithm is optimal for maximizing coverage given gap constraint
+Given frame f, compute pHash h(f):
 
----
+1. Convert to grayscale: G = 0.299R + 0.587G + 0.114B
+2. Resize to 32×32
+3. Apply 2D DCT, extract low-frequency 8×8 submatrix
+4. Compute median μ of DCT coefficients
+5. Binary hash: h(f)[i,j] = 1 if DCT[i,j] > μ, else 0
 
-### Reduction Rate Analysis
+Frames are similar if Hamming distance d_H(h(f₁), h(f₂)) ≤ τ_phash = 8.
 
-Define reduction rate at each stage:
+### 3. Structural Similarity Index
 
-**Stage-specific reduction:**
+SSIM between grayscale frames f₁ and f₂:
 
-$$
-R_i = 1 - \frac{|F_i|}{|F_{i-1}|}
-$$
-
-**Cumulative reduction:**
-
-$$
-R_{total} = 1 - \frac{|F_{final}|}{|F_{initial}|} = 1 - \prod_{i=1}^{n} (1 - R_i)
-$$
-
-**Expected reduction (empirical from v0002.mp4):**
-
-Given observed reductions:
-
-- Change detection: $R_1 \approx 0.942$ (450 → 26 frames)
-- PHash: $R_2 \approx 0.154$ (26 → 22 frames)
-- SSIM: $R_3 \approx 0.045$ (22 → 21 frames)
-- CLIP: $R_4 \approx 0.524$ (21 → 10 frames)
-- Selection: $R_5 \approx 0.500$ (10 → 5 frames)
-
-**Overall:**
-
-$$
-R_{total} = 1 - (1-0.942)(1-0.154)(1-0.045)(1-0.524)(1-0.500)
-$$
-
-$$
-= 1 - 0.058 \times 0.846 \times 0.955 \times 0.476 \times 0.500 \approx 0.989
-$$
-
-This matches observed 98.9% reduction.
-
----
-
-### Cost-Benefit Analysis
-
-**API Cost Model:**
-
-For vision-language models, cost is proportional to number of tokens:
-
-$$
-\text{Cost} = \alpha \cdot T_{input} + \beta \cdot T_{output}
-$$
+```
+SSIM(f₁, f₂) = [l(f₁,f₂)]^α · [c(f₁,f₂)]^β · [s(f₁,f₂)]^γ
+```
 
 where:
 
-- $\alpha$ = input token price (e.g., $3 per 1M tokens for Claude)
-- $\beta$ = output token price (e.g., $15 per 1M tokens)
-- $T_{input} \approx 1000 \cdot N_{frames}$ (each frame ~1000 tokens)
-- $T_{output} \approx 1000$ (JSON response)
+- l(f₁,f₂) = (2μ₁μ₂ + c₁) / (μ₁² + μ₂² + c₁) (luminance)
+- c(f₁,f₂) = (2σ₁σ₂ + c₂) / (σ₁² + σ₂² + c₂) (contrast)
+- s(f₁,f₂) = (σ₁₂ + c₃) / (σ₁σ₂ + c₃) (structure)
 
-**Baseline (uniform sampling every 0.3s):**
+With α = β = γ = 1, c₁ = (0.01L)², c₂ = (0.03L)², c₃ = c₂/2, L = 255.
 
-$$
-\text{Cost}_{baseline} = \alpha \cdot 1000 \cdot 50 + \beta \cdot 1000
-$$
+Frames are similar if SSIM(f₁, f₂) > τ_ssim = 0.92.
 
-**Our pipeline:**
+### 4. CLIP Semantic Similarity
 
-$$
-\text{Cost}_{ours} = \alpha \cdot 1000 \cdot 5 + \beta \cdot 1000
-$$
+For frame f, extract CLIP embedding e(f) ∈ R⁵¹² using ViT-B/32:
 
-**Cost reduction:**
+```
+e(f) = CLIP_encoder(f) / ||CLIP_encoder(f)||₂
+```
 
-$$
-\frac{\text{Cost}_{baseline} - \text{Cost}_{ours}}{\text{Cost}_{baseline}} = \frac{50\alpha - 5\alpha}{50\alpha + \beta} \approx 0.82
-$$
+Semantic similarity via cosine distance:
 
-for typical $\alpha = 3, \beta = 15$:
+```
+sim(f₁, f₂) = e(f₁)ᵀ · e(f₂) / (||e(f₁)||₂ · ||e(f₂)||₂)
+```
 
-$$
-= \frac{45 \times 3}{50 \times 3 + 15} = \frac{135}{165} \approx 0.818
-$$
+Frames are semantically similar if sim(f₁, f₂) > τ_clip = 0.90.
 
-**Result:** 81.8% cost reduction, matching observed ~80.8%
+### 5. Hierarchical Deduplication
 
----
+Given candidate set C = {(t_i, f_i)} with |C| = n:
 
-### Computational Complexity
+```
+Stage 1 (pHash):  D₁ = {f ∈ C | ∀g ∈ D₁, d_H(h(f), h(g)) > τ_phash}
+Stage 2 (SSIM):   D₂ = {f ∈ D₁ | ∀g ∈ D₂, SSIM(f, g) < τ_ssim}
+Stage 3 (CLIP):   D₃ = {f ∈ D₂ | ∀g ∈ D₃, sim(f, g) < τ_clip}
+```
 
-**Per-video complexity:**
+Output: D = D₃ with |D| << |C|
 
-| Stage            | Complexity                     | Dominant Term       |
-| ---------------- | ------------------------------ | ------------------- |
-| Change detection | $O(F \cdot HW)$                | Frame iteration     |
-| Scene detection  | $O(F \cdot HW)$                | PySceneDetect       |
-| PHash            | $O(C \cdot 32^2)$              | DCT on candidates   |
-| SSIM             | $O(C^2 \cdot HW)$              | Pairwise comparison |
-| CLIP             | $O(C \cdot P^2 L d^2)$         | Transformer         |
-| Clustering       | $O(C \cdot k \cdot d \cdot I)$ | K-means             |
-| LLM              | $O(N \cdot T)$                 | Token processing    |
+Complexity: O(n) for pHash, O(n² · w · h) for SSIM, O(n · d + n²) for CLIP
+
+### 6. Adaptive Density-Based Frame Allocation
+
+For scene s with duration Δt_s, compute frame variance:
+
+```
+σ_s = (1/|D_s|-1) Σᵢ ||f_i - f_(i+1)||² / 255²
+```
+
+where D_s are deduplicated frames in scene s.
+
+Adaptive density multiplier:
+
+```
+α(σ_s) = { 1.3,  σ_s > 0.15  (high motion)
+         { 0.7,  σ_s < 0.05  (static)
+         { 1.0,  otherwise
+```
+
+Target frame count for scene s:
+
+```
+n_s = clip(⌊Δt_s · ρ₀ · α(σ_s)⌋, n_min, n_max)
+```
+
+where ρ₀ = 0.25 frames/s, n_min = 2, n_max = 10.
+
+### 7. K-Means Temporal Clustering
+
+For scene s with embeddings E_s = {e₁, e₂, ..., e_m} and target n_s frames:
+
+Initialize k = min(n_s, m) cluster centers randomly.
+
+Iterate until convergence:
+
+```
+Assignment: c_i = argmin_j ||e_i - μ_j||₂
+Update:     μ_j = (1/|C_j|) Σ_{i∈C_j} e_i
+```
+
+Select representative frame for cluster j:
+
+```
+f*_j = argmin_{f_i∈C_j} ||e_i - μ_j||₂
+```
+
+### 8. Multi-Factor Importance Scoring
+
+Combined importance score:
+
+```
+I(f_i) = w_position(t_i, T) · w_audio(t_i, A) · w_scene(t_i, s_i)
+```
+
+Position weight:
+
+```
+w_position(t, T) = { 1.5,  t/T < 0.10  (opening 10%)
+                   { 1.3,  t/T > 0.90  (closing 10%)
+                   { 1.0,  otherwise
+```
+
+Audio event proximity (with proximity threshold δ_a = 0.5s):
+
+```
+w_audio(t, A) = { 1.3,  ∃p∈A.peaks: |t-p| < δ_a
+                { 1.4,  ∃(s,e)∈A.silences: e ≤ t < e+δ_a
+                { 1.0,  otherwise
+```
+
+Scene boundary weight:
+
+```
+w_scene(t, (t_start, t_end)) = { 1.4,  (t-t_start)/(t_end-t_start) < 0.15
+                                { 1.2,  (t-t_start)/(t_end-t_start) > 0.85
+                                { 1.0,  otherwise
+```
+
+### 9. Temporal Gap Enforcement
+
+Given sorted selected frames S = {f₁, f₂, ..., f_k} with timestamps t₁ < t₂ < ... < t_k:
+
+Filter to maintain minimum gap δ_min = 0.5s:
+
+```
+S' = {f₁}  // Always keep first frame
+for i = 2 to k-1:
+    if t_i - t_(last selected) ≥ δ_min:
+        S' ← S' ∪ {f_i}
+S' ← S' ∪ {f_k}  // Always keep last frame
+```
+
+### 10. Reduction Rate
+
+Frame reduction rate:
+
+```
+ρ = 1 - |S| / |C|
+```
 
 where:
 
-- $F$ = total frames (e.g., 450)
-- $C$ = candidate frames (e.g., 26)
-- $N$ = selected frames (e.g., 5)
-- $HW$ = frame pixels (e.g., $720^2$)
-- $P$ = patches (49), $L$ = layers (12), $d$ = dimensions (768)
+- |C| = total candidate frames extracted
+- |S| = final selected frames for LLM extraction
 
-**Bottleneck:** CLIP embedding with complexity $O(C \cdot 10^6)$
+Typical results: ρ ∈ [0.80, 0.85] (80-85% reduction)
 
-**Optimization:** GPU batching reduces wall-clock time by factor of $B$ (batch size)
+## Pipeline Stages
 
----
+### Stage 1: Video Ingestion
 
-### Evaluation Metrics
+**Objective**: Load video metadata and extract audio track for multimodal analysis.
 
-#### Precision and Recall
+**Process**:
 
-For field-level extraction evaluation:
+1. Validate video file format (mp4, mov, avi, mkv, webm)
+2. Extract metadata using OpenCV:
+   - Duration (seconds)
+   - Frame rate (fps)
+   - Resolution (width × height)
+   - Codec information
+3. Optional audio extraction using FFmpeg:
+   - Output format: 16kHz mono WAV
+   - Codec: PCM signed 16-bit little-endian
 
-**Precision:**
+**Implementation**: `src/ingestion/video_loader.py`
 
-$$
-P = \frac{|\text{Extracted} \cap \text{GroundTruth}|}{|\text{Extracted}|}
-$$
+**Parameters**:
 
-**Recall:**
+- `max_resolution`: 720 (downscale if higher)
+- `extract_audio`: true
 
-$$
-R = \frac{|\text{Extracted} \cap \text{GroundTruth}|}{|\text{GroundTruth}|}
-$$
+### Stage 2: Scene Detection
 
-**F1 Score:**
+**Objective**: Segment video into semantically coherent scenes to guide frame selection.
 
-$$
-F_1 = 2 \cdot \frac{P \cdot R}{P + R} = \frac{2 |\text{Extracted} \cap \text{GroundTruth}|}{|\text{Extracted}| + |\text{GroundTruth}|}
-$$
+**Method**: PySceneDetect ContentDetector with adaptive threshold
 
-#### Semantic Similarity
-
-For comparing extracted text with ground truth:
-
-**Sentence-BERT similarity:**
-
-$$
-\text{sim}_{SBERT}(s_1, s_2) = \frac{\text{BERT}(s_1) \cdot \text{BERT}(s_2)}{\|\text{BERT}(s_1)\| \|\text{BERT}(s_2)\|}
-$$
-
-where $\text{BERT}(s)$ produces contextualized sentence embedding.
-
-**Threshold:** Match if $\text{sim}_{SBERT} > 0.8$
-
-#### Coverage Score
-
-Measures narrative completeness:
-
-$$
-\text{Coverage} = \frac{1}{3}\left(\mathbb{1}[\text{opening}] + \mathbb{1}[\text{middle}] + \mathbb{1}[\text{closing}]\right)
-$$
-
-where $\mathbb{1}[\cdot]$ indicates presence of frame in that position range.
-
-**Perfect coverage:** $\text{Coverage} = 1$ (all three phases represented)
-
----
-
-## Stage 1: Video Ingestion & Metadata Extraction
-
-**Input:** Video file (MP4, MOV, AVI, MKV, WebM)
-
-**Operations:**
-
-- Extract video metadata (duration, fps, resolution, codec)
-- Extract audio track for parallel processing
-- Compute video-level statistics (average brightness, motion intensity)
-
-**Output:**
-
-- Video metadata JSON
-- Separated audio file (WAV format)
-- Initial video statistics
-
-**Tools:** FFmpeg, OpenCV
-
-**Implementation:**
+**Algorithm**:
 
 ```python
-class VideoLoader:
-    def load(self, video_path, max_resolution=720, extract_audio=True):
-        """Load video and extract metadata."""
-        cap = cv2.VideoCapture(video_path)
+def detect_scenes(video, threshold=27.0, min_length=0.5):
+    detector = ContentDetector(threshold)
+    scene_list = detect(video, detector)
 
-        metadata = {
-            'duration': cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS),
-            'fps': cap.get(cv2.CAP_PROP_FPS),
-            'width': int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-            'height': int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        }
+    # Filter by minimum scene length
+    valid_scenes = [
+        (start, end) for (start, end) in scene_list
+        if end - start >= min_length
+    ]
 
-        if extract_audio:
-            audio_path = self._extract_audio(video_path)
+    # Fallback for static videos
+    if len(valid_scenes) == 0:
+        # Retry with lower threshold
+        detector = ContentDetector(threshold=15.0)
+        scene_list = detect(video, detector)
 
-        return metadata, audio_path
+        # If still empty, create artificial chunks
+        if len(scene_list) == 0:
+            chunk_size = 10.0
+            valid_scenes = artificial_chunk_scenes(video.duration, chunk_size)
+
+    return valid_scenes
 ```
 
----
+**Implementation**: `src/detection/scene_detector.py`
 
-## Stage 2: Lightweight Change Detection
+**Parameters**:
 
-**Purpose:** Identify candidate moments where frame extraction is worthwhile
+- `method`: "content" (ContentDetector)
+- `threshold`: 27.0
+- `min_scene_length_s`: 0.5
+- `fallback.threshold`: 15.0
+- `fallback.chunk_size_s`: 10.0
 
-**Methods (in order of computational cost):**
+**Output**: List of scene boundaries [(t_start, t_end), ...]
 
-| Method                      | Cost      | What It Detects           | Use When               |
-| --------------------------- | --------- | ------------------------- | ---------------------- |
-| Motion vectors (from codec) | Near Zero | Movement between frames   | Real-time needed       |
-| Frame difference (L1/L2)    | Very Low  | Any pixel changes         | Fast processing        |
-| Histogram difference        | Low       | Color distribution shifts | Default (best balance) |
-| Edge change ratio           | Low       | Structural changes        | High precision         |
+### Stage 3: Candidate Frame Extraction
 
-### Implementation
+**Objective**: Extract frames at points of significant visual change.
+
+**Method**: Histogram-based change detection with adaptive thresholding
+
+**Algorithm**:
 
 ```python
-class HistogramDetector:
-    """Default: Detects color distribution changes using Chi-Square distance."""
+def extract_candidates(video, threshold=0.15, min_interval_ms=100):
+    candidates = []
+    prev_frame = None
+    last_candidate_time = -min_interval_ms
 
-    def compute_change(self, frame1, frame2):
-        """Compute Chi-Square distance between color histograms."""
-        hist1 = cv2.calcHist([frame1], [0, 1, 2], None, [16, 16, 16], [0, 256] * 3)
-        hist2 = cv2.calcHist([frame2], [0, 1, 2], None, [16, 16, 16], [0, 256] * 3)
-        hist1 = cv2.normalize(hist1, hist1).flatten()
-        hist2 = cv2.normalize(hist2, hist2).flatten()
-        return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CHISQR)
+    for timestamp, frame in iterate_frames(video, interval_ms=50):
+        if prev_frame is None:
+            candidates.append((timestamp, frame))
+            last_candidate_time = timestamp * 1000
+            prev_frame = frame
+            continue
 
-class FrameDifferenceDetector:
-    """L1 norm of grayscale difference, normalized by frame size."""
+        # Check minimum time gap
+        if (timestamp * 1000 - last_candidate_time) < min_interval_ms:
+            prev_frame = frame
+            continue
 
-    def compute_change(self, frame1, frame2):
-        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-        diff = np.abs(gray1.astype(float) - gray2.astype(float))
-        return np.mean(diff) / 255.0
+        # Compute histogram change
+        change = histogram_chi_square(prev_frame, frame)
 
-class EdgeChangeDetector:
-    """Detects structural changes using Canny edge detection."""
+        if change > threshold:
+            candidates.append((timestamp, frame))
+            last_candidate_time = timestamp * 1000
 
-    def compute_change(self, frame1, frame2):
-        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+        prev_frame = frame
 
-        edges1 = cv2.Canny(gray1, 100, 200)
-        edges2 = cv2.Canny(gray2, 100, 200)
-
-        # XOR to find differences
-        diff = cv2.bitwise_xor(edges1, edges2)
-        union = cv2.bitwise_or(edges1, edges2)
-
-        return np.sum(diff) / (np.sum(union) + 1e-6)
+    return candidates
 ```
 
-**Output:** List of timestamps where significant change detected
+**Implementation**: `src/detection/change_detector.py`
 
-**Adaptive Threshold Logic:**
+**Parameters**:
 
-- Fast-paced ads (many scene cuts): Lower threshold, more candidates
-- Slow-paced ads (few cuts): Higher threshold, fewer candidates
-- Threshold adjusts based on running statistics of the video
+- `method`: "histogram"
+- `threshold`: 0.15
+- `min_interval_ms`: 100
+- `sample_interval_ms`: 50
 
----
+**Complexity**: O(n × w × h) where n is video duration / sample interval
 
-## Stage 3: Scene Boundary Detection
+### Stage 4: Hierarchical Deduplication
 
-**Purpose:** Segment video into coherent scenes/shots for narrative-aware selection
+**Objective**: Remove redundant frames using cascading similarity filters.
 
-**Methods:**
+**Architecture**: Three-tier pyramid with increasing semantic depth:
 
-| Method                            | Description                    | When to Use          | Accuracy  | Speed  |
-| --------------------------------- | ------------------------------ | -------------------- | --------- | ------ |
-| PySceneDetect (ContentDetector)   | Detects content changes        | General purpose      | Good      | Fast   |
-| PySceneDetect (ThresholdDetector) | Detects fade-to-black          | TV commercials       | Good      | Fast   |
-| TransNetV2                        | Neural shot boundary detection | High accuracy needed | Excellent | Medium |
+#### Tier 1: Perceptual Hash (pHash)
 
-### PySceneDetect Implementation
+- **Speed**: ~2ms per frame
+- **Memory**: 64 bits per frame
+- **Catches**: Exact and near-exact duplicates
+- **False negative rate**: ~5%
+
+#### Tier 2: Structural Similarity (SSIM)
+
+- **Speed**: ~50ms per comparison
+- **Memory**: 256×256 grayscale (64 KB per frame)
+- **Catches**: Frames with identical structure, different details
+- **False negative rate**: ~2%
+
+#### Tier 3: CLIP Embeddings
+
+- **Speed**: ~100ms per frame (batch of 32)
+- **Memory**: 512 floats per frame (2 KB)
+- **Catches**: Semantically similar frames (different angles, lighting)
+- **False negative rate**: ~0.5%
+
+**Implementation**: `src/deduplication/hierarchical.py`
+
+**Parameters**:
+
+```yaml
+deduplication:
+  phash:
+    enabled: true
+    threshold: 8 # Hamming distance
+  ssim:
+    enabled: true
+    threshold: 0.92
+  clip:
+    enabled: true
+    model: "ViT-B/32"
+    threshold: 0.90
+    device: "cpu"
+    batch_size: 32
+```
+
+**Performance**: Reduces frames by 70-80% while preserving semantic diversity
+
+### Stage 5: Audio Event Extraction
+
+**Objective**: Identify audio-visual synchronization points for importance scoring.
+
+**Features Extracted**:
+
+1. **Energy Peaks**: Moments of audio emphasis (e.g., beat drops, emphasis words)
+
+   - RMS energy computation with 90th percentile threshold
+   - Local maxima detection with pre/post buffers
+
+2. **Silence Segments**: Natural transition points
+   - Threshold: -40dB
+   - Minimum duration: 0.3s
+   - Used to identify scene transition points
+
+**Implementation**: `src/ingestion/audio_extractor.py`
+
+**Algorithm**:
 
 ```python
-from scenedetect import detect, ContentDetector, ThresholdDetector
+def extract_audio_events(audio_path):
+    y, sr = librosa.load(audio_path, sr=16000)
 
-class SceneDetector:
-    def __init__(self, method='content', threshold=27.0):
-        self.method = method
-        self.threshold = threshold
+    # Energy peaks
+    rms = librosa.feature.rms(y=y)[0]
+    times = librosa.times_like(rms, sr=sr)
+    threshold = np.percentile(rms, 90)
+    peak_indices = librosa.util.peak_pick(
+        rms, pre_max=3, post_max=3,
+        pre_avg=3, post_avg=5,
+        delta=threshold * 0.1, wait=10
+    )
+    energy_peaks = times[peak_indices]
 
-    def detect_scenes(self, video_path):
-        """Detect scene boundaries in video."""
-        if self.method == 'content':
-            detector = ContentDetector(threshold=self.threshold)
-        elif self.method == 'threshold':
-            detector = ThresholdDetector(threshold=self.threshold)
-        else:
-            raise ValueError(f"Unknown method: {self.method}")
+    # Silence detection
+    rms_db = librosa.amplitude_to_db(rms, ref=np.max)
+    silence_segments = detect_silence(rms_db, times, threshold=-40, min_duration=0.3)
 
-        scene_list = detect(video_path, detector)
-        return [(s[0].get_seconds(), s[1].get_seconds()) for s in scene_list]
+    return {
+        'energy_peaks': energy_peaks.tolist(),
+        'silence_segments': silence_segments
+    }
 ```
 
-### TransNetV2 Implementation (Optional - Higher Accuracy)
+**Complexity**: O(n) where n is audio sample count
+
+### Stage 6: Representative Frame Selection
+
+**Objective**: Select optimal subset of frames proportional to scene duration and complexity.
+
+**Components**:
+
+#### 6.1 Scene Assignment
+
+Map each deduplicated frame to its containing scene based on timestamp.
+
+#### 6.2 Adaptive Density Calculation
+
+Compute scene-specific frame density based on visual complexity:
 
 ```python
-class TransNetV2Detector:
-    """Neural shot boundary detection using TransNetV2."""
+def calculate_adaptive_density(scene_frames, base_density=0.25):
+    # Compute frame-to-frame variance
+    variance = np.mean([
+        np.mean(np.abs(f1 - f2)) / 255.0
+        for f1, f2 in zip(scene_frames[:-1], scene_frames[1:])
+    ])
 
-    def __init__(self, threshold=0.5):
-        from transnetv2 import TransNetV2
-        self.model = TransNetV2()
-        self.threshold = threshold
-
-    def detect_scenes(self, video_path):
-        """
-        Detect scene boundaries using TransNetV2.
-
-        TransNetV2 is a neural network trained specifically for shot boundary
-        detection. It achieves state-of-the-art results on standard benchmarks.
-
-        Paper: Soucek, T., & Lokoč, J. (2020). TransNet V2: An effective deep network
-               architecture for fast shot transition detection. arXiv:2008.04838
-        """
-        # Load video frames
-        video_frames = self._load_video(video_path)
-
-        # Predict shot boundaries
-        predictions = self.model.predict_video(video_frames)
-
-        # Threshold predictions to get boundaries
-        boundaries = self._predictions_to_scenes(predictions, self.threshold)
-
-        return boundaries
-
-    def _load_video(self, video_path):
-        """Load video frames for TransNetV2."""
-        cap = cv2.VideoCapture(video_path)
-        frames = []
-
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            # TransNetV2 expects RGB frames of size 48x27
-            frame = cv2.resize(frame, (48, 27))
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frames.append(frame)
-
-        cap.release()
-        return np.array(frames)
-
-    def _predictions_to_scenes(self, predictions, threshold):
-        """Convert predictions to scene boundaries."""
-        fps = 30.0  # Assume 30fps, adjust based on video
-        boundaries = []
-
-        # Find peaks in predictions above threshold
-        scene_starts = np.where(predictions > threshold)[0]
-
-        # Convert frame indices to timestamps
-        for i in range(len(scene_starts) - 1):
-            start_time = scene_starts[i] / fps
-            end_time = scene_starts[i + 1] / fps
-            boundaries.append((start_time, end_time))
-
-        return boundaries
+    if variance > 0.15:  # High motion
+        return base_density * 1.3
+    elif variance < 0.05:  # Static
+        return base_density * 0.7
+    else:
+        return base_density
 ```
 
-**Output:** List of (start_time, end_time) tuples for each scene
+#### 6.3 Target Frame Allocation
 
-**Comparison:**
-
-- **PySceneDetect:** Fast, good for most cases, works well on ads with clear cuts
-- **TransNetV2:** More accurate, handles gradual transitions, requires GPU for real-time, trained on large datasets
-
----
-
-## Stage 4: Hierarchical Frame Deduplication
-
-**Purpose:** Remove redundant frames using progressively expensive methods
-
-**Philosophy:** Use cheap methods first to filter out obvious duplicates, then apply expensive methods only to remaining frames
-
-### Layer 1: Perceptual Hashing (pHash)
-
-- **Cost:** ~0.1ms per frame
-- **What it catches:** Near-identical frames, minor compression artifacts, slight camera shake
-- **Threshold:** Hamming distance < 8 (out of 64 bits)
+For each scene with duration Δt:
 
 ```python
-import imagehash
-from PIL import Image
-
-class PHashDeduplicator:
-    def __init__(self, threshold=8):
-        self.threshold = threshold
-
-    def compute_phash(self, frame):
-        """Compute perceptual hash of frame."""
-        pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        return imagehash.phash(pil_image)
-
-    def deduplicate(self, frames):
-        """Remove near-duplicate frames using pHash."""
-        if not frames:
-            return []
-
-        unique_frames = [frames[0]]
-        unique_hashes = [self.compute_phash(frames[0][1])]
-
-        for timestamp, frame in frames[1:]:
-            frame_hash = self.compute_phash(frame)
-
-            # Check if similar to any existing frame
-            is_duplicate = False
-            for existing_hash in unique_hashes:
-                if frame_hash - existing_hash < self.threshold:
-                    is_duplicate = True
-                    break
-
-            if not is_duplicate:
-                unique_frames.append((timestamp, frame))
-                unique_hashes.append(frame_hash)
-
-        return unique_frames
+target_frames = int(scene_duration * adaptive_density)
+target_frames = max(min_frames_per_scene, min(target_frames, max_frames_per_scene))
 ```
 
-### Layer 2: Structural Similarity (SSIM)
+#### 6.4 K-Means Temporal Clustering
 
-- **Cost:** ~5ms per frame pair
-- **What it catches:** Frames with same structure but different details (e.g., person in same pose but different lighting)
-- **Threshold:** SSIM > 0.92
-
-```python
-from skimage.metrics import structural_similarity as ssim
-
-class SSIMDeduplicator:
-    def __init__(self, threshold=0.92):
-        self.threshold = threshold
-
-    def compute_ssim(self, frame1, frame2):
-        """Compute SSIM between two frames."""
-        gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-        gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-
-        # Resize to same size if needed
-        if gray1.shape != gray2.shape:
-            gray2 = cv2.resize(gray2, (gray1.shape[1], gray1.shape[0]))
-
-        score, _ = ssim(gray1, gray2, full=True)
-        return score
-
-    def deduplicate(self, frames):
-        """Remove structurally similar frames."""
-        if not frames:
-            return []
-
-        unique_frames = [frames[0]]
-
-        for timestamp, frame in frames[1:]:
-            is_duplicate = False
-
-            for _, existing_frame in unique_frames:
-                similarity = self.compute_ssim(frame, existing_frame)
-                if similarity > self.threshold:
-                    is_duplicate = True
-                    break
-
-            if not is_duplicate:
-                unique_frames.append((timestamp, frame))
-
-        return unique_frames
-```
-
-### Layer 3: CLIP Embedding Similarity
-
-- **Cost:** ~50ms per frame (GPU), ~500ms (CPU)
-- **What it catches:** Semantically similar frames with visual differences (e.g., different shots of same person, product at different angles)
-- **Threshold:** Cosine similarity > 0.90
-
-```python
-import torch
-import open_clip
-from PIL import Image
-
-class CLIPDeduplicator:
-    def __init__(self, model_name="ViT-B-32", pretrained="openai", threshold=0.90, device="auto"):
-        self.threshold = threshold
-        self.device = self._get_device(device)
-
-        # Load CLIP model
-        self.model, _, self.preprocess = open_clip.create_model_and_transforms(
-            model_name, pretrained=pretrained
-        )
-        self.model = self.model.to(self.device)
-        self.model.eval()
-
-    def _get_device(self, device):
-        if device == "auto":
-            return "cuda" if torch.cuda.is_available() else "cpu"
-        return device
-
-    def embed(self, frame):
-        """Compute CLIP embedding for frame."""
-        pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        image_input = self.preprocess(pil_image).unsqueeze(0).to(self.device)
-
-        with torch.no_grad():
-            embedding = self.model.encode_image(image_input)
-            embedding = embedding / embedding.norm(dim=-1, keepdim=True)  # Normalize
-
-        return embedding.cpu().numpy().flatten()
-
-    def deduplicate(self, frames):
-        """Remove semantically similar frames using CLIP."""
-        if not frames:
-            return [], None
-
-        # Compute embeddings for all frames
-        embeddings = [self.embed(frame) for _, frame in frames]
-
-        unique_frames = [frames[0]]
-        unique_embeddings = [embeddings[0]]
-
-        for i, ((timestamp, frame), embedding) in enumerate(zip(frames[1:], embeddings[1:]), 1):
-            is_duplicate = False
-
-            for existing_emb in unique_embeddings:
-                similarity = np.dot(embedding, existing_emb)
-                if similarity > self.threshold:
-                    is_duplicate = True
-                    break
-
-            if not is_duplicate:
-                unique_frames.append((timestamp, frame))
-                unique_embeddings.append(embedding)
-
-        return unique_frames, np.array(unique_embeddings)
-```
-
-### Hierarchical Orchestrator
-
-```python
-class HierarchicalDeduplicator:
-    """Orchestrates 3-layer hierarchical deduplication."""
-
-    def __init__(
-        self,
-        phash_enabled=True, phash_threshold=8,
-        ssim_enabled=True, ssim_threshold=0.92,
-        clip_enabled=True, clip_threshold=0.90, clip_device="auto"
-    ):
-        self.phash_enabled = phash_enabled
-        self.ssim_enabled = ssim_enabled
-        self.clip_enabled = clip_enabled
-
-        if phash_enabled:
-            self.phash = PHashDeduplicator(threshold=phash_threshold)
-        if ssim_enabled:
-            self.ssim = SSIMDeduplicator(threshold=ssim_threshold)
-        if clip_enabled:
-            self.clip = CLIPDeduplicator(threshold=clip_threshold, device=clip_device)
-
-    def deduplicate(self, frames):
-        """Apply hierarchical deduplication."""
-        stats = {"input": len(frames)}
-        current_frames = frames
-        embeddings = None
-
-        # Layer 1: PHash (fastest)
-        if self.phash_enabled and len(current_frames) > 1:
-            current_frames = self.phash.deduplicate(current_frames)
-            stats["after_phash"] = len(current_frames)
-
-        # Layer 2: SSIM (medium)
-        if self.ssim_enabled and len(current_frames) > 1:
-            current_frames = self.ssim.deduplicate(current_frames)
-            stats["after_ssim"] = len(current_frames)
-
-        # Layer 3: CLIP (slowest but semantic)
-        if self.clip_enabled and len(current_frames) > 1:
-            current_frames, embeddings = self.clip.deduplicate(current_frames)
-            stats["after_clip"] = len(current_frames)
-
-        stats["output"] = len(current_frames)
-        return current_frames, embeddings, stats
-```
-
-**Hierarchical Flow Visualization:**
-
-```
-All candidate frames (26)
-    │
-    ▼ pHash filtering
-Frames passing pHash (22) - 15.4% removed
-    │
-    ▼ SSIM filtering
-Frames passing SSIM (21) - 4.5% removed
-    │
-    ▼ CLIP filtering
-Final keyframes (10) - 52.4% removed
-```
-
-**Why This Works:**
-
-- pHash catches exact/near-duplicates cheaply (compression artifacts, slight variations)
-- SSIM catches structural similarity (same composition, different lighting)
-- CLIP (expensive) only runs on frames that survived cheap filters
-- Each layer removes a different type of redundancy
-
----
-
-## Stage 5: Temporal Clustering & Representative Selection
-
-**Purpose:** Group remaining frames by scene and select best representatives based on importance and diversity
-
-### Scene Assignment & Importance Scoring
+Within each scene, cluster frames in CLIP embedding space:
 
 ```python
 from sklearn.cluster import KMeans
 
-class FrameSelector:
-    def __init__(self, max_frames_per_scene=3, min_temporal_gap_s=0.5):
-        self.clusterer = TemporalClusterer(
-            max_frames_per_scene=max_frames_per_scene,
-            min_temporal_gap_s=min_temporal_gap_s
-        )
-        self.scorer = ImportanceScorer()
+def select_representatives(embeddings, n_clusters):
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    labels = kmeans.fit_predict(embeddings)
 
-    def select(self, frames, embeddings, scene_boundaries, video_duration, audio_events=None):
-        """Select representative frames from candidates."""
+    # Select frame closest to each centroid
+    representatives = []
+    for cluster_id in range(n_clusters):
+        cluster_embeddings = embeddings[labels == cluster_id]
+        centroid = kmeans.cluster_centers_[cluster_id]
 
-        # Assign frames to scenes
-        candidates = self.clusterer.assign_scenes(frames, scene_boundaries)
+        distances = np.linalg.norm(cluster_embeddings - centroid, axis=1)
+        best_idx = np.argmin(distances)
+        representatives.append(cluster_frames[best_idx])
 
-        # Score importance
-        for cand in candidates:
-            cand.importance_score = self.scorer.compute_importance(
-                cand, video_duration, scene_boundaries, audio_events
-            )
-
-        # Cluster and select representatives
-        selected = self.clusterer.cluster_and_select(candidates, embeddings)
-
-        return selected
+    return sorted(representatives, key=lambda x: x.timestamp)
 ```
 
-### Temporal Clustering with K-Means
+#### 6.5 Importance Scoring
+
+Multi-factor scoring combining position, audio, and scene context:
 
 ```python
-class TemporalClusterer:
-    def cluster_and_select(self, candidates, embeddings=None):
-        """
-        Cluster frames within each scene and select representatives.
-        Always includes first and last frame.
-        """
-        if not candidates:
-            return []
+def compute_importance(frame, video_duration, scene_bounds, audio_events):
+    score = 1.0
 
-        # ALWAYS include first and last frame
-        first_frame = min(candidates, key=lambda c: c.timestamp)
-        last_frame = max(candidates, key=lambda c: c.timestamp)
+    # Position in video
+    position = frame.timestamp / video_duration
+    if position < 0.1:
+        score *= 1.5  # Opening boost
+    elif position > 0.9:
+        score *= 1.3  # Closing boost
 
-        first_frame.is_representative = True
-        last_frame.is_representative = True
+    # Audio event proximity
+    for peak in audio_events['energy_peaks']:
+        if abs(frame.timestamp - peak) < 0.5:
+            score *= 1.3
+            break
 
-        must_include_timestamps = {first_frame.timestamp, last_frame.timestamp}
+    # Scene boundary
+    scene_start, scene_end = scene_bounds[frame.scene_id]
+    scene_position = (frame.timestamp - scene_start) / (scene_end - scene_start)
+    if scene_position < 0.15:
+        score *= 1.4  # Scene start
+    elif scene_position > 0.85:
+        score *= 1.2  # Scene end
 
-        # Attach embeddings
-        if embeddings is not None:
-            for i, cand in enumerate(candidates):
-                if i < len(embeddings):
-                    cand.embedding = embeddings[i]
-
-        # Group by scene
-        scene_frames = {}
-        for cand in candidates:
-            scene_id = cand.scene_id or 0
-            if scene_id not in scene_frames:
-                scene_frames[scene_id] = []
-            scene_frames[scene_id].append(cand)
-
-        # Select representatives from each scene
-        selected = []
-
-        for scene_id in sorted(scene_frames.keys()):
-            scene_cands = scene_frames[scene_id]
-
-            # Check how many must-include frames are in this scene
-            scene_must_include = [c for c in scene_cands if c.timestamp in must_include_timestamps]
-            remaining_slots = self.max_frames_per_scene - len(scene_must_include)
-
-            if len(scene_cands) <= self.max_frames_per_scene:
-                # Keep all frames in small scenes
-                for cand in scene_cands:
-                    cand.is_representative = True
-                selected.extend(scene_cands)
-            else:
-                # Add must-include frames
-                selected.extend(scene_must_include)
-
-                # Cluster remaining frames
-                remaining_cands = [c for c in scene_cands if c.timestamp not in must_include_timestamps]
-
-                if remaining_slots > 0 and remaining_cands:
-                    reps = self._kmeans_selection(remaining_cands, remaining_slots)
-                    selected.extend(reps)
-
-        # Enforce temporal gap (but preserve first/last)
-        selected = self._enforce_temporal_gap(selected)
-
-        return selected
-
-    def _kmeans_selection(self, scene_frames, n_clusters):
-        """Use K-means clustering on CLIP embeddings to select representatives."""
-        if not scene_frames or not scene_frames[0].embedding:
-            return self._uniform_selection(scene_frames, n_clusters)
-
-        n_clusters = min(n_clusters, len(scene_frames))
-
-        # Stack embeddings
-        embeddings = np.array([f.embedding for f in scene_frames])
-
-        # Cluster
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-        labels = kmeans.fit_predict(embeddings)
-
-        # Select frame closest to each centroid
-        selected = []
-        for cluster_id in range(n_clusters):
-            cluster_frames = [f for i, f in enumerate(scene_frames) if labels[i] == cluster_id]
-            if not cluster_frames:
-                continue
-
-            centroid = kmeans.cluster_centers_[cluster_id]
-
-            # Find closest frame to centroid
-            best_frame = min(
-                cluster_frames,
-                key=lambda f: np.linalg.norm(f.embedding - centroid)
-            )
-
-            best_frame.is_representative = True
-            selected.append(best_frame)
-
-        selected.sort(key=lambda x: x.timestamp)
-        return selected
-
-    def _enforce_temporal_gap(self, frames):
-        """Remove frames too close together while preserving first/last."""
-        if not frames or len(frames) <= 2:
-            return frames
-
-        sorted_frames = sorted(frames, key=lambda x: x.timestamp)
-
-        first_frame = sorted_frames[0]
-        last_frame = sorted_frames[-1]
-        middle_frames = sorted_frames[1:-1]
-
-        kept = [first_frame]
-
-        for frame in middle_frames:
-            if frame.timestamp - kept[-1].timestamp >= self.min_temporal_gap_s:
-                kept.append(frame)
-
-        # ALWAYS keep last frame
-        if last_frame.timestamp != kept[-1].timestamp:
-            kept.append(last_frame)
-
-        return kept
+    return score
 ```
 
-### Importance Scorer
+#### 6.6 Temporal Gap Enforcement
+
+Ensure minimum 0.5s gap between selected frames (except first/last):
 
 ```python
-class ImportanceScorer:
-    def compute_importance(self, frame, video_duration, scene_boundaries=None, audio_events=None):
-        """Compute overall importance score for a frame."""
-        score = 1.0
+def enforce_temporal_gap(frames, min_gap=0.5):
+    if len(frames) <= 2:
+        return frames
 
-        # Position in video
-        score *= self.score_by_position(frame.timestamp, video_duration)
+    kept = [frames[0]]  # Always keep first
 
-        # Position in scene
-        if scene_boundaries and frame.scene_id is not None:
-            if 0 <= frame.scene_id < len(scene_boundaries):
-                start, end = scene_boundaries[frame.scene_id]
-                score *= self.score_by_scene_position(frame.timestamp, start, end)
+    for frame in frames[1:-1]:
+        if frame.timestamp - kept[-1].timestamp >= min_gap:
+            kept.append(frame)
 
-        # Audio events
-        if audio_events:
-            score *= self.score_by_audio_events(frame.timestamp, audio_events)
-
-        return score
-
-    def score_by_position(self, timestamp, duration):
-        """Score based on position in video."""
-        position = timestamp / duration if duration > 0 else 0
-
-        if position < 0.1:
-            return 1.5  # Opening
-        elif position > 0.95:
-            return 2.5  # Final moments (CTA)
-        elif position > 0.9:
-            return 2.0  # Closing
-        return 1.0
-
-    def score_by_scene_position(self, timestamp, scene_start, scene_end):
-        """Score based on position within scene."""
-        scene_duration = scene_end - scene_start
-        if scene_duration <= 0:
-            return 1.0
-
-        position_in_scene = (timestamp - scene_start) / scene_duration
-
-        if position_in_scene < 0.15:
-            return 1.4  # Scene start
-        elif position_in_scene > 0.85:
-            return 1.2  # Scene end
-        return 1.0
-
-    def score_by_audio_events(self, timestamp, audio_events, proximity_threshold_s=0.5):
-        """Score based on proximity to audio events."""
-        score = 1.0
-
-        # Check proximity to energy peaks
-        for peak_ts in audio_events.get("energy_peaks", []):
-            if abs(timestamp - peak_ts) < proximity_threshold_s:
-                score *= 1.3
-                break
-
-        # Check if after silence
-        for start, end in audio_events.get("silence_segments", []):
-            if end <= timestamp < end + proximity_threshold_s:
-                score *= 1.4
-                break
-
-        return score
+    kept.append(frames[-1])  # Always keep last
+    return kept
 ```
 
----
+**Implementation**: `src/selection/clustering.py`, `src/selection/representative.py`
 
-## Stage 6: Audio-Visual Alignment (Optional Enhancement)
+**Parameters**:
 
-**Purpose:** Align frame selection with audio events for better context
-
-**Audio Features to Extract:**
-
-- Speech boundaries (using VAD - Voice Activity Detection)
-- Music/jingle detection
-- Audio energy peaks
-- Silence detection (often indicates scene transitions)
-
-```python
-import librosa
-
-class AudioExtractor:
-    def extract_audio_events(self, audio_path):
-        """Extract significant audio events."""
-        y, sr = librosa.load(audio_path)
-
-        # Energy-based event detection
-        rms = librosa.feature.rms(y=y)[0]
-        times = librosa.times_like(rms, sr=sr)
-
-        # Find peaks in audio energy
-        peaks = librosa.util.peak_pick(
-            rms, pre_max=3, post_max=3,
-            pre_avg=3, post_avg=5, delta=0.1, wait=10
-        )
-
-        # Detect silence
-        silence_segments = self._detect_silence(y, sr)
-
-        return {
-            "energy_peaks": times[peaks].tolist(),
-            "silence_segments": silence_segments
-        }
-
-    def _detect_silence(self, y, sr, threshold=-40):
-        """Detect silence segments in audio."""
-        # Convert to dB
-        db = librosa.amplitude_to_db(np.abs(y), ref=np.max)
-
-        # Find silent regions
-        silent = db < threshold
-
-        # Convert to time segments
-        segments = []
-        in_silence = False
-        start = 0
-
-        for i, is_silent in enumerate(silent):
-            if is_silent and not in_silence:
-                start = i / sr
-                in_silence = True
-            elif not is_silent and in_silence:
-                end = i / sr
-                if end - start > 0.3:  # Minimum 0.3s silence
-                    segments.append((start, end))
-                in_silence = False
-
-        return segments
+```yaml
+selection:
+  method: "clustering"
+  target_frame_density: 0.25
+  min_frames_per_scene: 2
+  max_frames_per_scene: 10
+  min_temporal_gap_s: 0.5
+  adaptive_density: true
 ```
 
-**Integration:** Boost importance of frames near audio events (already implemented in ImportanceScorer)
+**Output**: Typically 20-30 frames for a 60-second video (vs. 600 with dense sampling)
 
----
+### Stage 7: LLM-Based Extraction
 
-## Stage 7: LLM Vision API Integration
+**Objective**: Extract structured advertisement information using vision-language models.
 
-**Purpose:** Extract structured insights from selected keyframes
+**Architecture**: Two-pass adaptive schema extraction
 
-**Supported APIs:**
+#### Pass 1: Ad Type Detection
 
-| Provider  | Model            | Input Cost          | Output Cost   | Best For                     |
-| --------- | ---------------- | ------------------- | ------------- | ---------------------------- |
-| Anthropic | Claude Sonnet 4  | $3/1M tokens        | $15/1M tokens | Structured output, reasoning |
-| OpenAI    | GPT-4o           | $2.50/1M tokens     | $10/1M tokens | Fast inference, good quality |
-| Google    | Gemini 2.0 Flash | Free (experimental) | Free          | Cost optimization, testing   |
+Classify advertisement into one of five categories:
 
-### Temporal-Aware Prompt Construction
+1. **Product Demo**: Feature demonstrations, how-it-works
+2. **Testimonial**: Customer reviews, expert endorsements
+3. **Brand Awareness**: Emotional storytelling, brand values
+4. **Tutorial**: Educational, how-to content
+5. **Entertainment**: Humor, celebrity content, viral moments
 
-The LLM receives all keyframes together with temporal context, enabling narrative understanding:
+**Prompt** (abbreviated):
 
-```python
-def build_temporal_prompt(frames_with_timestamps, schema, video_duration):
-    """
-    Build a prompt that gives LLM temporal context for narrative understanding.
+```
+Analyze this advertisement and classify it into exactly ONE category:
+- product_demo: Shows product features, usage, or demonstration
+- testimonial: Features customer reviews, expert opinions
+- brand_awareness: Emotional storytelling focused on brand values
+- tutorial: Teaches how to do something
+- entertainment: Comedy, celebrity content, viral moments
 
-    Args:
-        frames_with_timestamps: List of FrameForPrompt objects
-        schema: JSON schema for extraction
-        video_duration: Total video duration in seconds
+Respond with ONLY the category name, nothing else.
+```
 
-    Returns:
-        Formatted prompt string
-    """
-    num_frames = len(frames_with_timestamps)
+#### Pass 2: Structured Extraction
 
-    prompt = f"""You are analyzing a {video_duration:.1f}-second video advertisement through {num_frames} keyframes.
+Use type-specific schema with temporal context enrichment:
 
-The frames are in CHRONOLOGICAL ORDER with timestamps. Analyze both individual frames AND the narrative progression.
+**Temporal Context Format**:
+
+```
+You are analyzing a 60.1-second video advertisement through 44 keyframes.
+
+The frames are in CHRONOLOGICAL ORDER. Analyze both individual frames AND the narrative progression.
+
+ANALYSIS APPROACH:
+1. Identify what CHANGES between frames (scene transitions, new elements, text)
+2. Track the NARRATIVE ARC (setup → development → conclusion/CTA)
+3. Note RECURRING ELEMENTS (logo appearances, product shots, faces)
+4. Consider the PACING (fast cuts = energy, slow shots = emotion)
 
 TEMPORAL CONTEXT:
-"""
-
-    for i, frame in enumerate(frames_with_timestamps):
-        position = frame.timestamp / video_duration
-
-        line = f"\nFrame {i+1} @ {frame.timestamp:.1f}s"
-
-        if i > 0:
-            time_gap = frame.timestamp - frames_with_timestamps[i-1].timestamp
-            line += f" (Δ{time_gap:.1f}s from previous)"
-
-        # Add position label
-        if frame.position_label:
-            line += f" [{frame.position_label}]"
-
-        prompt += line
-
-    prompt += f"""
-
-ANALYSIS INSTRUCTIONS:
-1. Identify what CHANGES between frames (scene transitions, new elements, text changes)
-2. Track the NARRATIVE ARC (setup → development → conclusion/CTA)
-3. Note any RECURRING ELEMENTS (logo appearances, product shots, faces)
-4. Pay special attention to [CLOSING] frames for call-to-action and pricing
+Frame 1 @ 0.0s [OPENING]
+Frame 2 @ 1.4s (Δ1.4s)
+Frame 3 @ 2.8s (Δ1.4s)
+...
+Frame 44 @ 58.6s (Δ1.5s) [CLOSING]
 
 Extract the following information in JSON format:
-{json.dumps(schema, indent=2)}
-
-IMPORTANT:
-- Respond with ONLY valid JSON, no markdown or explanation
-- Use null for fields where information is not available
-- Be specific and concise in your descriptions
-
-JSON Response:"""
-
-    return prompt
-
-
-def prepare_frames_for_prompt(frames, video_duration, include_position_labels=True):
-    """Prepare frames with metadata for prompt."""
-    prepared = []
-
-    for ts, frame in frames:
-        position_label = None
-
-        if include_position_labels:
-            position = ts / video_duration if video_duration > 0 else 0
-            if position < 0.15:
-                position_label = "OPENING"
-            elif position > 0.85:
-                position_label = "CLOSING"
-            elif 0.4 < position < 0.6:
-                position_label = "MIDDLE"
-
-        prepared.append(FrameForPrompt(
-            timestamp=ts,
-            base64_image=frame_to_base64(frame),
-            position_label=position_label
-        ))
-
-    return prepared
+{base_schema + type_specific_extensions}
 ```
 
-### Adaptive Schema Selection
-
-The pipeline automatically selects the appropriate extraction schema based on detected ad type:
-
-```python
-class AdExtractor:
-    """Main extractor with adaptive schema support."""
-
-    def __init__(
-        self,
-        provider="anthropic",
-        model="claude-sonnet-4-20250514",
-        schema_mode="adaptive",  # adaptive, fixed, flexible
-        temporal_context=True
-    ):
-        self.client = get_llm_client(provider, model)
-        self.schema_mode = schema_mode
-        self.temporal_context = temporal_context
-
-    def extract(self, frames, video_duration):
-        """Extract structured information from ad frames."""
-        if not frames:
-            return {"error": "No frames provided"}
-
-        # Prepare frames
-        prepared_frames = prepare_frames_for_prompt(frames, video_duration)
-
-        # Detect ad type if adaptive
-        ad_type = None
-        if self.schema_mode == "adaptive":
-            ad_type = self.detect_ad_type(prepared_frames)
-
-        # Get schema
-        schema = get_schema(mode=self.schema_mode, ad_type=ad_type)
-
-        # Build prompt
-        prompt = build_temporal_prompt(prepared_frames, schema, video_duration)
-
-        # Extract
-        response = self.client.extract(prepared_frames, prompt)
-
-        # Parse JSON
-        result = json.loads(response)
-        result["_metadata"] = {
-            "ad_type": ad_type,
-            "schema_mode": self.schema_mode,
-            "num_frames": len(frames),
-            "video_duration": video_duration
-        }
-
-        return result
-
-    def detect_ad_type(self, frames):
-        """First pass: detect ad type from frames."""
-        detection_prompt = build_type_detection_prompt()
-
-        response = self.client.extract(frames, detection_prompt)
-        ad_type = response.strip().lower().replace(" ", "_")
-
-        # Validate
-        valid_types = get_valid_ad_types()
-        if ad_type in valid_types:
-            return ad_type
-
-        # Try partial match
-        for valid in valid_types:
-            if valid in ad_type or ad_type in valid:
-                return valid
-
-        return "brand_awareness"  # Default fallback
-```
-
-### Schema Definitions
-
-```python
-# Base schema (always extracted)
-BASE_SCHEMA = {
-    "brand": {
-        "name": "string",
-        "logo_visible": "boolean",
-        "logo_timestamps": ["float"]
-    },
-    "message": {
-        "primary_message": "string",
-        "call_to_action": "string | null",
-        "tagline": "string | null"
-    },
-    "creative_elements": {
-        "dominant_colors": ["string"],
-        "text_overlays": ["string"],
-        "music_mood": "string | null"
-    },
-    "target_audience": {
-        "age_group": "string",
-        "interests": ["string"]
-    },
-    "persuasion_techniques": ["string"]
-}
-
-# Type-specific schema extensions
-SCHEMA_EXTENSIONS = {
-    "product_demo": {
-        "product": {
-            "name": "string",
-            "category": "string",
-            "features_demonstrated": ["string"],
-            "price_shown": "string | null"
-        },
-        "demo_steps": ["string"]
-    },
-    "testimonial": {
-        "testimonial": {
-            "speaker_name": "string | null",
-            "speaker_role": "string",
-            "key_quotes": ["string"],
-            "credibility_markers": ["string"]
-        }
-    },
-    "brand_awareness": {
-        "emotional_appeal": {
-            "primary_emotion": "string",
-            "storytelling_elements": ["string"],
-            "brand_values_conveyed": ["string"]
-        }
-    },
-    "tutorial": {
-        "tutorial": {
-            "skill_taught": "string",
-            "steps": ["string"],
-            "tools_shown": ["string"]
-        }
-    },
-    "entertainment": {
-        "entertainment": {
-            "humor_type": "string | null",
-            "celebrity_featured": "string | null",
-            "viral_elements": ["string"]
-        }
-    }
-}
-
-# Flexible schema (single-pass alternative)
-FLEXIBLE_SCHEMA = {
-    "brand": {"name": "string", "logo_visible": "boolean"},
-    "ad_type": "string (product_demo | testimonial | brand_awareness | tutorial | entertainment)",
-    "message": {"primary_message": "string", "call_to_action": "string | null"},
-    "narrative": {
-        "opening_hook": "string",
-        "middle_development": "string",
-        "closing_resolution": "string"
-    },
-    "key_elements": ["string"],
-    "persuasion_techniques": ["string"],
-    "target_audience": {"demographics": "string", "interests": ["string"]}
-}
-```
-
-### Multi-Provider LLM Clients
-
-```python
-class AnthropicClient:
-    """Claude API client."""
-
-    def __init__(self, model="claude-sonnet-4-20250514", max_tokens=2000, temperature=0.0):
-        import anthropic
-        self.model = model
-        self.max_tokens = max_tokens
-        self.temperature = temperature
-        self.client = anthropic.Anthropic()
-
-    def extract(self, frames, prompt):
-        content = []
-
-        for frame in frames:
-            content.append({
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/jpeg",
-                    "data": frame.base64_image
-                }
-            })
-
-        content.append({"type": "text", "text": prompt})
-
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            messages=[{"role": "user", "content": content}]
-        )
-
-        return response.content[0].text
-
-
-class OpenAIClient:
-    """GPT-4V API client."""
-
-    def __init__(self, model="gpt-4o", max_tokens=2000, temperature=0.0):
-        from openai import OpenAI
-        self.model = model
-        self.max_tokens = max_tokens
-        self.temperature = temperature
-        self.client = OpenAI()
-
-    def extract(self, frames, prompt):
-        content = []
-
-        for frame in frames:
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{frame.base64_image}"}
-            })
-
-        content.append({"type": "text", "text": prompt})
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            messages=[{"role": "user", "content": content}]
-        )
-
-        return response.choices[0].message.content
-
-
-class GeminiClient:
-    """Google Gemini API client."""
-
-    def __init__(self, model="gemini-2.0-flash-exp", max_tokens=2000, temperature=0.0):
-        import google.generativeai as genai
-        import os
-
-        genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-
-        self.model = genai.GenerativeModel(model)
-        self.max_tokens = max_tokens
-        self.temperature = temperature
-
-    def extract(self, frames, prompt):
-        from PIL import Image
-        from io import BytesIO
-        import base64
-
-        content = []
-
-        for frame in frames:
-            image_data = base64.b64decode(frame.base64_image)
-            pil_image = Image.open(BytesIO(image_data))
-            content.append(pil_image)
-
-        content.append(prompt)
-
-        response = self.model.generate_content(
-            content,
-            generation_config={
-                "max_output_tokens": self.max_tokens,
-                "temperature": self.temperature,
-            }
-        )
-
-        return response.text
-```
-
----
-
-## Experimental Results
-
-### Example: 15-Second Product Demo (v0002.mp4)
-
-**Video:** Target Optical - Precision 1 contact lenses
-
-**Pipeline Execution:**
-
-```
-Input: 15.0s video, 720x720, 30fps (450 total frames)
-
-Stage 1: Video ingestion           → 15.0s duration detected
-Stage 2: Scene detection            → 5 scenes detected
-Stage 3: Candidate extraction       → 26 candidates (HistogramDetector)
-Stage 4: Hierarchical deduplication
-  - PHash (threshold=8):            → 26 → 22 frames (4 removed, 15.4%)
-  - SSIM (threshold=0.92):          → 22 → 21 frames (1 removed, 4.5%)
-  - CLIP (threshold=0.90):          → 21 → 10 frames (11 removed, 52.4%)
-Stage 5: Audio events               → 3 energy peaks, 1 silence segment
-Stage 6: Representative selection   → 10 → 5 frames (50.0%)
-  - Scene assignments: [0, 0, 1, 2, 4]
-  - Importance scores: [2.10, 1.30, 1.00, 1.00, 2.00]
-  - First frame (0.0s): guaranteed
-  - Last frame (14.5s): guaranteed (CTA)
-Stage 7: LLM extraction (Gemini)
-  - Pass 1: Ad type → "product_demo"
-  - Pass 2: Extraction → Success
-
-Final: 5 frames selected (98.9% reduction) in 21.1s
-```
-
-**Selected Frames:**
-
-| Frame | Timestamp | Scene | Importance | Position | Rationale                      |
-| ----- | --------- | ----- | ---------- | -------- | ------------------------------ |
-| 1     | 0.0s      | 0     | 2.10       | OPENING  | Brand intro (guaranteed first) |
-| 2     | 2.1s      | 0     | 1.30       | -        | Product visibility             |
-| 3     | 3.9s      | 1     | 1.00       | -        | Feature demonstration          |
-| 4     | 7.0s      | 2     | 1.00       | -        | Social proof                   |
-| 5     | 14.5s     | 4     | 2.00       | CLOSING  | CTA (guaranteed last)          |
-
-**Extracted Data:**
+**Base Schema** (all ad types):
 
 ```json
 {
   "brand": {
-    "name": "Target Optical",
-    "logo_visible": true,
-    "logo_timestamps": [0.0, 2.1, 3.9, 7.0, 8.3]
+    "name": "string",
+    "logo_visible": "boolean",
+    "logo_timestamps": ["float"]
   },
   "message": {
-    "primary_message": "Precision 1 contact lenses for clear vision and comfort",
-    "call_to_action": null,
-    "tagline": null
-  },
-  "product": {
-    "name": "Precision 1",
-    "category": "contact lenses",
-    "features_demonstrated": ["clarity", "comfort", "daily disposable"],
-    "price_shown": null
+    "primary_message": "string",
+    "call_to_action": "string or null",
+    "tagline": "string or null"
   },
   "creative_elements": {
-    "dominant_colors": ["purple", "blue", "white"],
-    "text_overlays": [
-      "Two Peas, One Pod",
-      "Welcome Home, Dear",
-      "Matches the vibe"
-    ],
-    "music_mood": "upbeat"
+    "dominant_colors": ["string"],
+    "text_overlays": ["string"],
+    "music_mood": "string or null"
   },
   "target_audience": {
-    "age_group": "18-35",
-    "interests": ["socializing", "fashion", "technology", "eye care"]
+    "age_group": "string",
+    "interests": ["string"]
   },
-  "persuasion_techniques": ["social proof", "lifestyle", "visual appeal"],
-  "_metadata": {
-    "ad_type": "product_demo",
-    "schema_mode": "adaptive",
-    "num_frames": 5,
-    "video_duration": 15.015
+  "persuasion_techniques": ["string"]
+}
+```
+
+**Type-Specific Extensions**:
+
+Brand Awareness:
+
+```json
+{
+  "emotional_appeal": {
+    "primary_emotion": "string",
+    "storytelling_elements": ["string"],
+    "brand_values_conveyed": ["string"]
   }
 }
 ```
 
-**Performance Analysis:**
+Product Demo:
 
-- Successfully identified brand and product
-- Extracted text overlays from frames
-- Correctly detected ad type (product_demo)
-- Identified target audience and persuasion techniques
-- **Missing:** Call-to-action (may be in audio or appears very briefly at end)
-
-**Cost Comparison:**
-
-| Method       | Frames Sent | Input Tokens | Output Tokens | Cost (Claude) | Cost (Gemini) |
-| ------------ | ----------- | ------------ | ------------- | ------------- | ------------- |
-| Uniform 0.3s | 50          | 50,000       | 1,000         | $0.165        | Free          |
-| Uniform 1.0s | 15          | 15,000       | 1,000         | $0.060        | Free          |
-| Our Pipeline | 5           | 5,000        | 1,000         | $0.030        | Free          |
-
-**Reduction vs. Uniform 0.3s:** 81.8% cost reduction
-
----
-
-## Evaluation Framework
-
-### Datasets
-
-| Dataset                        | Size            | Annotations                     | Use Case               |
-| ------------------------------ | --------------- | ------------------------------- | ---------------------- |
-| **Hussain et al. (CVPR 2017)** | 3,477 video ads | Topic, sentiment, action-reason | Primary benchmark      |
-| **LAMBDA**                     | 2,205 ads       | Memorability scores             | Secondary validation   |
-| **Custom test set**            | 42 videos       | Full extraction ground truth    | LLM quality evaluation |
-
-### Metrics
-
-#### Efficiency Metrics
-
-| Metric               | Formula                                              | Target        | Achieved      |
-| -------------------- | ---------------------------------------------------- | ------------- | ------------- |
-| Frame Reduction Rate | $1 - \frac{\text{selected}}{\text{total}}$           | > 70%         | 98.9%         |
-| API Cost Reduction   | $1 - \frac{\text{our\_cost}}{\text{baseline\_cost}}$ | > 60%         | 80.8%         |
-| Processing Time      | Total pipeline time                                  | < 2x duration | 1.4x duration |
-| Throughput           | Videos per hour                                      | > 60          | ~170          |
-
-#### Quality Metrics
-
-| Metric                  | Description                 | How to Compute                       |
-| ----------------------- | --------------------------- | ------------------------------------ |
-| Extraction Accuracy     | Match with ground truth     | Field-by-field F1 score              |
-| Extraction Completeness | Coverage of required fields | Recall of mandatory fields           |
-| Semantic Similarity     | Text similarity             | SBERT cosine similarity              |
-| Narrative Completeness  | Coverage of narrative arc   | Opening + middle + closing detection |
-
-### Baselines to Compare Against
-
-| Baseline         | Description                | Expected Performance        |
-| ---------------- | -------------------------- | --------------------------- |
-| **Uniform-0.3s** | Frame every 0.3s           | 50 frames, high redundancy  |
-| **Uniform-1.0s** | Frame every 1.0s           | 15 frames, may miss details |
-| **CLIP-Only**    | Uniform + CLIP dedup       | 10-15 frames, expensive     |
-| **Scene-First**  | One frame per scene        | 3-5 frames, may miss CTA    |
-| **Ours**         | Full hierarchical pipeline | 5-10 frames, optimal        |
-
-### Ablation Studies
-
-| Experiment             | What We Vary                     | What We Measure                     |
-| ---------------------- | -------------------------------- | ----------------------------------- |
-| pHash threshold        | Hamming distance: 4, 8, 12, 16   | Frames retained, downstream quality |
-| SSIM threshold         | SSIM: 0.85, 0.90, 0.92, 0.95     | Frames retained, downstream quality |
-| CLIP threshold         | Cosine sim: 0.85, 0.90, 0.95     | Frames retained, downstream quality |
-| Hierarchical vs. flat  | With/without pHash/SSIM layers   | Processing time, quality            |
-| Scene detection method | PySceneDetect vs. TransNetV2     | Accuracy, speed tradeoff            |
-| Frames per scene       | 1, 2, 3, 5 representatives       | Coverage vs. efficiency             |
-| Change detector        | Histogram vs. Edge vs. FrameDiff | Candidate quality, count            |
-
----
-
-## Project Structure
-
-```
-video-analysis-pipeline-research/
-├── README.md
-├── pyproject.toml             # UV package configuration
-├── .env                       # API keys (not committed)
-│
-├── config/
-│   └── default.yaml           # Pipeline configuration
-│
-├── src/
-│   ├── pipeline.py            # Main orchestrator
-│   │
-│   ├── ingestion/
-│   │   ├── video_loader.py    # Video + metadata extraction
-│   │   └── audio_extractor.py # Audio track + events
-│   │
-│   ├── detection/
-│   │   ├── change_detector.py # Histogram/Edge/FrameDiff detectors
-│   │   └── scene_detector.py  # PySceneDetect integration + candidate extraction
-│   │
-│   ├── deduplication/
-│   │   ├── base.py            # Base deduplicator interface
-│   │   ├── phash.py           # Perceptual hashing (Layer 1)
-│   │   ├── ssim.py            # Structural similarity (Layer 2)
-│   │   ├── clip_embed.py      # CLIP embeddings (Layer 3)
-│   │   └── hierarchical.py    # Orchestrates 3-layer cascade
-│   │
-│   ├── selection/
-│   │   ├── clustering.py      # Scene assignment + K-means clustering
-│   │   └── representation.py  # Importance scoring + selection
-│   │
-│   ├── extraction/
-│   │   ├── llm_client.py      # Multi-provider LLM clients + orchestrator
-│   │   ├── prompt.py          # Temporal prompt building
-│   │   └── schema.py          # Adaptive extraction schemas
-│   │
-│   └── utils/
-│       ├── config.py          # YAML configuration loading
-│       ├── logging.py         # Logging setup
-│       ├── metrics.py         # PipelineResult & metrics
-│       └── video_utils.py     # Video I/O utilities
-│
-├── data/ads/                  # Test videos
-├── outputs/audio/             # Extracted audio tracks
-│
-├── experiments/
-│   └── pipeline.py            # End-to-end test
-│
-└── tests/
-    ├── clustering.py          # Scene assignment + clustering tests
-    ├── representative.py      # Importance scoring tests
-    ├── hierarchical.py        # Hierarchical dedup tests
-    ├── phash.py               # PHash dedup tests
-    ├── ssim.py                # SSIM dedup tests
-    └── clip.py                # CLIP dedup tests
+```json
+{
+  "product": {
+    "name": "string",
+    "category": "string",
+    "features_demonstrated": ["string"],
+    "price_shown": "string or null"
+  },
+  "demo_steps": ["string"]
+}
 ```
 
----
+**Implementation**: `src/extraction/llm_client.py`, `src/extraction/prompts.py`
+
+**Supported Providers**:
+
+- Anthropic Claude (claude-sonnet-4-20250514)
+- OpenAI GPT-4V (gpt-4o)
+- Google Gemini (gemini-2.0-flash-exp)
+
+**Parameters**:
+
+```yaml
+extraction:
+  provider: "gemini"
+  model: "gemini-2.0-flash-exp"
+  max_tokens: 2000
+  temperature: 0.0
+
+  temporal_context:
+    enabled: true
+    include_timestamps: true
+    include_time_deltas: true
+    include_position_labels: true
+    include_narrative_instructions: true
+
+  schema:
+    mode: "adaptive" # adaptive | fixed | flexible
+```
+
+**Cost Analysis**:
+
+For a 60-second video:
+
+- Dense sampling (100ms): 600 frames × $0.0075/image = $4.50
+- Our pipeline (44 frames): 44 × $0.0075/image = $0.33
+- **Reduction: 92.7% cost savings**
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8+
+- FFmpeg (for audio extraction)
+- CUDA-capable GPU (optional, for CLIP acceleration)
+
+### Environment Setup
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/video-ad-analysis-pipeline.git
+cd video-ad-analysis-pipeline
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Dependencies
+
+Core libraries:
+
+```
+opencv-python>=4.8.0
+numpy>=1.24.0
+pillow>=10.0.0
+scikit-image>=0.21.0
+scikit-learn>=1.3.0
+torch>=2.0.0
+open-clip-torch>=2.20.0
+scenedetect[opencv]>=0.6.2
+librosa>=0.10.0
+pyyaml>=6.0
+```
+
+LLM client libraries:
+
+```
+anthropic>=0.18.0
+openai>=1.12.0
+google-generativeai>=0.3.0
+```
+
+### API Keys
+
+Create a `.env` file in the project root:
+
+```bash
+# Choose one based on your preferred LLM provider
+ANTHROPIC_API_KEY=your_anthropic_key_here
+OPENAI_API_KEY=your_openai_key_here
+GOOGLE_API_KEY=your_google_key_here
+```
+
+## Usage
+
+### Basic Usage
+
+```bash
+# Process a single video
+python -m experiments.pipeline --video path/to/video.mp4
+
+# Process directory of videos
+python main.py --input data/ads --output results/analysis.json
+
+# Process with multiple workers
+python main.py -i data/ads -o results.json --workers 4
+
+# Skip LLM extraction (testing pipeline only)
+python main.py -i data/ads --skip-extraction
+```
+
+### Configuration
+
+Modify `config/default.yaml` to customize pipeline behavior:
+
+```yaml
+# Example: High-quality extraction (more frames, stricter deduplication)
+selection:
+  target_frame_density: 0.35  # More frames per scene
+  min_frames_per_scene: 3
+  max_frames_per_scene: 15
+
+deduplication:
+  clip:
+    threshold: 0.95  # Stricter semantic similarity
+
+# Example: Fast processing (fewer frames, relaxed deduplication)
+selection:
+  target_frame_density: 0.15  # Fewer frames per scene
+  min_frames_per_scene: 1
+  max_frames_per_scene: 5
+
+deduplication:
+  clip:
+    threshold: 0.85  # Relaxed semantic similarity
+```
+
+### Python API
+
+```python
+from src.pipeline import AdVideoPipeline
+
+# Initialize pipeline
+pipeline = AdVideoPipeline(config_path='config/default.yaml')
+
+# Process single video
+result = pipeline.process('path/to/video.mp4')
+
+print(f"Extracted {result.final_frame_count} frames from {len(result.scenes)} scenes")
+print(f"Reduction rate: {result.reduction_rate:.1%}")
+print(f"Brand: {result.extraction_result['brand']['name']}")
+
+# Batch processing
+results = pipeline.process_batch(
+    video_paths=['video1.mp4', 'video2.mp4'],
+    max_workers=2,
+    skip_extraction=False
+)
+```
+
+### Output Format
+
+```json
+{
+  "metadata": {
+    "timestamp": "2025-12-29T13:48:11.766000",
+    "total_videos": 1,
+    "successful": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "status": "success",
+      "video_path": "data/ads/bernie_2016.mp4",
+      "metadata": {
+        "duration": 60.06,
+        "fps": 30.0,
+        "width": 1280,
+        "height": 720
+      },
+      "scenes": [
+        { "scene_id": 0, "start_time": 0.0, "end_time": 1.4 },
+        { "scene_id": 1, "start_time": 1.4, "end_time": 2.8 }
+      ],
+      "selected_frames": [
+        { "timestamp": 0.0, "scene_id": 0, "importance_score": 1.5 },
+        { "timestamp": 1.4, "scene_id": 1, "importance_score": 1.4 }
+      ],
+      "pipeline_stats": {
+        "total_frames_sampled": 279,
+        "frames_after_phash": 194,
+        "frames_after_ssim": 194,
+        "frames_after_clip": 64,
+        "final_frame_count": 44,
+        "reduction_rate": 0.842,
+        "processing_time_s": 406.4
+      },
+      "extraction": {
+        "brand": {
+          "name": "Bernie Sanders",
+          "logo_visible": false,
+          "logo_timestamps": []
+        },
+        "message": {
+          "primary_message": "Bernie Sanders is for all of America.",
+          "call_to_action": null,
+          "tagline": null
+        },
+        "creative_elements": {
+          "dominant_colors": ["white", "blue", "red"],
+          "text_overlays": ["ALL", "TO", "AMERICA"],
+          "music_mood": "uplifting"
+        },
+        "target_audience": {
+          "age_group": "all ages",
+          "interests": ["politics", "social justice", "community"]
+        },
+        "persuasion_techniques": [
+          "social proof",
+          "emotional appeal",
+          "bandwagon"
+        ],
+        "emotional_appeal": {
+          "primary_emotion": "hope",
+          "storytelling_elements": [
+            "Images of everyday Americans",
+            "Scenes of community and family"
+          ],
+          "brand_values_conveyed": ["community", "equality", "inclusiveness"]
+        },
+        "_metadata": {
+          "ad_type": "brand_awareness",
+          "schema_mode": "adaptive",
+          "num_frames": 44,
+          "video_duration": 60.06
+        }
+      }
+    }
+  ]
+}
+```
 
 ## Configuration
 
-### Default Configuration (config/default.yaml)
+### Complete Configuration Reference
 
 ```yaml
+# config/default.yaml
+
+pipeline:
+  name: "adaptive-ad-pipeline"
+  version: "2.0.0"
+
 # Video ingestion
 ingestion:
   max_resolution: 720
@@ -1961,41 +1084,54 @@ ingestion:
 
 # Change detection
 change_detection:
-  method: "histogram" # Options: histogram, edge, frame_diff
+  method: "histogram" # frame_diff | histogram | edge
   threshold: 0.15
   min_interval_ms: 100
 
 # Scene detection
 scene_detection:
-  method: "content" # Options: content, threshold, transnet
+  method: "content" # content | threshold
   threshold: 27.0
   min_scene_length_s: 0.5
+
+  fallback:
+    enabled: true
+    threshold: 15.0
+    artificial_chunks: true
+    chunk_size_s: 10.0
 
 # Hierarchical deduplication
 deduplication:
   phash:
     enabled: true
-    threshold: 8 # Hamming distance
+    threshold: 8
   ssim:
     enabled: true
-    threshold: 0.92 # Structural similarity
+    threshold: 0.92
   clip:
     enabled: true
     model: "ViT-B/32"
-    threshold: 0.90 # Cosine similarity
-    device: "auto" # auto, cuda, cpu
+    threshold: 0.90
+    device: "cpu" # cuda | cpu | auto
     batch_size: 32
 
 # Representative selection
 selection:
-  method: "clustering" # clustering, uniform, first
-  max_frames_per_scene: 3
+  method: "clustering" # clustering | uniform | first
+
+  # Density-based allocation
+  target_frame_density: 0.25
+  min_frames_per_scene: 2
+  max_frames_per_scene: 10
   min_temporal_gap_s: 0.5
+
+  # Adaptive density
+  adaptive_density: true
 
 # LLM extraction
 extraction:
-  provider: "anthropic" # anthropic, openai, gemini
-  model: "claude-sonnet-4-20250514"
+  provider: "gemini" # anthropic | openai | gemini
+  model: "gemini-2.0-flash-exp"
   max_tokens: 2000
   temperature: 0.0
 
@@ -2004,233 +1140,562 @@ extraction:
     enabled: true
     include_timestamps: true
     include_time_deltas: true
-    include_position_labels: true # [OPENING], [CLOSING]
+    include_position_labels: true
     include_narrative_instructions: true
 
   # Adaptive schema
   schema:
-    mode: "adaptive" # adaptive, fixed, flexible
+    mode: "adaptive" # adaptive | fixed | flexible
+    schema_name: "full"
+    confidence_sampling:
+      enabled: false
+      n_samples: 3
+      temperature: 0.3
+
+# Batch processing
+batch:
+  enabled: true
+  max_workers: 1
+  gpu_batch_size: 32
+
+# Logging
+logging:
+  level: "INFO" # DEBUG | INFO | WARNING | ERROR
+  log_file: null
 ```
 
----
+## Experimental Results
 
-## Usage
+### Test Videos
 
-### Basic Pipeline Usage
+Two representative advertisements from different categories:
+
+1. **Political Ad**: Bernie Sanders 2016 campaign (60.1s)
+
+   - Type: Brand awareness
+   - Scenes: 44
+   - Characteristics: Diverse imagery, rallies, community scenes
+
+2. **Commercial Ad**: Burger King (72.6s)
+   - Type: Entertainment
+   - Scenes: 25
+   - Characteristics: Humor-focused, product showcase
+
+### Quantitative Results
+
+| Metric              | Bernie Sanders | Burger King | Average   |
+| ------------------- | -------------- | ----------- | --------- |
+| Duration (s)        | 60.1           | 72.6        | 66.4      |
+| Scenes Detected     | 44             | 25          | 34.5      |
+| Candidate Frames    | 279            | 149         | 214       |
+| After pHash         | 194            | 109         | 151.5     |
+| After SSIM          | 194            | 107         | 150.5     |
+| After CLIP          | 64             | 31          | 47.5      |
+| Final Selected      | 44             | 26          | 35        |
+| **Reduction Rate**  | **84.2%**      | **82.6%**   | **83.4%** |
+| Processing Time (s) | 406.4          | 54.5        | 230.5     |
+| Time per Frame (s)  | 9.2            | 2.1         | 5.7       |
+
+### Stage-by-Stage Reduction Analysis
+
+**Bernie Sanders Ad**:
+
+```
+Candidates (279)
+  → pHash (194, -30.5%)
+  → SSIM (194, 0%)
+  → CLIP (64, -67.0%)
+  → Selection (44, -31.3%)
+Final: 84.2% total reduction
+```
+
+**Burger King Ad**:
+
+```
+Candidates (149)
+  → pHash (109, -26.8%)
+  → SSIM (107, -1.8%)
+  → CLIP (31, -71.0%)
+  → Selection (26, -16.1%)
+Final: 82.6% total reduction
+```
+
+**Key Observations**:
+
+1. pHash provides consistent ~27-30% reduction (near-duplicates)
+2. SSIM shows minimal additional filtering (0-2%) after pHash
+3. CLIP provides dramatic 67-71% reduction (semantic duplicates)
+4. Final selection applies temporal/importance constraints (16-31% reduction)
+
+### Qualitative Results
+
+#### Bernie Sanders (Brand Awareness)
+
+**Detected Elements**:
+
+- Brand: Bernie Sanders (logo not prominently visible)
+- Primary Message: "Bernie Sanders is for all of America"
+- Dominant Colors: White, blue, red (patriotic palette)
+- Text Overlays: "ALL", "TO", "AMERICA", campaign branding
+- Music Mood: Uplifting
+- Target Audience: All ages, interests in politics/social justice
+- Persuasion Techniques: Social proof, emotional appeal, bandwagon
+- Primary Emotion: Hope
+- Storytelling Elements: Everyday Americans, community scenes, rallies
+- Brand Values: Community, equality, inclusiveness, patriotism
+
+**Analysis**: The pipeline correctly identified this as brand awareness content focusing on emotional appeal and broad inclusiveness rather than specific policy proposals.
+
+#### Burger King (Entertainment)
+
+**Detected Elements**:
+
+- Brand: Burger King (logo visible at timestamp 66.0s)
+- Primary Message: "Burger King tastes better"
+- Call to Action: "Visit Burger King's website"
+- Tagline: "It just tastes better"
+- Dominant Colors: Brown, blue, white
+- Text Overlays: Website URL, branding, hosting watermark
+- Music Mood: Upbeat
+- Target Audience: 18-35, interests in fast food/humor/cars
+- Persuasion Techniques: Humor, association
+- Humor Type: Slapstick
+- Viral Elements: Lowrider car, people eating burgers in car
+
+**Analysis**: The pipeline correctly classified this as entertainment-focused advertising using humor and viral-worthy moments rather than traditional product demonstration.
+
+### Cost Analysis
+
+For LLM API usage (assuming Gemini 2.0 Flash pricing):
+
+| Approach                   | Frames/Video | Cost/Frame  | Total Cost | Reduction |
+| -------------------------- | ------------ | ----------- | ---------- | --------- |
+| Dense (100ms)              | 600          | $0.0075     | $4.50      | -         |
+| Our Pipeline (Bernie)      | 44           | $0.0075     | $0.33      | 92.7%     |
+| Our Pipeline (Burger King) | 26           | $0.0075     | $0.20      | 95.6%     |
+| **Average**                | **35**       | **$0.0075** | **$0.26**  | **94.2%** |
+
+**Scaling Analysis**:
+
+For 1000 video dataset:
+
+- Dense sampling: 1000 × $4.50 = **$4,500**
+- Our pipeline: 1000 × $0.26 = **$260**
+- **Savings: $4,240 (94.2% reduction)**
+
+### Processing Time Analysis
+
+| Stage                | Bernie (60s) | Burger King (73s) | % of Total |
+| -------------------- | ------------ | ----------------- | ---------- |
+| Video Loading        | 0.1s         | 0.2s              | 0.3%       |
+| Scene Detection      | 13.1s        | 1.0s              | 30.6%      |
+| Candidate Extraction | 277.4s       | 5.9s              | 61.6%      |
+| Deduplication        | 109.9s       | 35.2s             | 31.5%      |
+| Audio Extraction     | 1.7s         | 1.6s              | 0.7%       |
+| Frame Selection      | 2.3s         | 1.7s              | 0.9%       |
+| LLM Extraction       | 10.9s        | 4.9s              | 3.4%       |
+| **Total**            | **406.4s**   | **54.5s**         | **100%**   |
+
+**Bottleneck Analysis**:
+
+- Candidate extraction (61.6%): I/O-bound video decoding
+- Scene detection (30.6%): CPU-intensive content analysis
+- Deduplication (31.5%): CLIP embedding computation
+
+**Optimization Opportunities**:
+
+1. GPU acceleration for CLIP (estimated 5-10x speedup)
+2. Parallel video decoding for batch processing
+3. Frame pre-caching for multi-stage processing
+
+## Technical Implementation
+
+### Project Structure
+
+```
+video-ad-analysis-pipeline/
+├── config/
+│   └── default.yaml              # Configuration file
+├── data/
+│   └── ads/                      # Input video directory
+├── outputs/
+│   ├── audio/                    # Extracted audio files
+│   ├── frames/                   # Debug frame outputs
+│   └── results.json              # Batch processing results
+├── src/
+│   ├── deduplication/
+│   │   ├── base.py               # Abstract deduplicator
+│   │   ├── phash.py              # Perceptual hashing
+│   │   ├── ssim.py               # Structural similarity
+│   │   ├── clip_embed.py         # CLIP embeddings
+│   │   └── hierarchical.py       # Hierarchical pipeline
+│   ├── detection/
+│   │   ├── change_detector.py    # Frame change detection
+│   │   └── scene_detector.py     # Scene segmentation
+│   ├── extraction/
+│   │   ├── llm_client.py         # LLM API clients
+│   │   ├── prompts.py            # Prompt engineering
+│   │   └── schema.py             # Extraction schemas
+│   ├── ingestion/
+│   │   ├── audio_extractor.py    # Audio processing
+│   │   └── video_loader.py       # Video I/O
+│   ├── selection/
+│   │   ├── clustering.py         # Temporal clustering
+│   │   └── representative.py     # Frame selection
+│   ├── utils/
+│   │   ├── config.py             # Configuration loading
+│   │   ├── logging.py            # Logging utilities
+│   │   ├── metrics.py            # Performance metrics
+│   │   └── video_utils.py        # Video utilities
+│   └── pipeline.py               # Main pipeline orchestrator
+├── experiments/
+│   └── pipeline.py               # Single video test script
+├── main.py                       # Batch processing CLI
+├── requirements.txt              # Python dependencies
+└── README.md                     # This file
+```
+
+### Key Algorithms
+
+#### Histogram-Based Change Detection
 
 ```python
-from src.pipeline import AdVideoPipeline
+def histogram_chi_square(frame1, frame2, bins=16):
+    """
+    Compute chi-square distance between color histograms.
 
-# Initialize pipeline
-pipeline = AdVideoPipeline(config_path="config/default.yaml")
+    Args:
+        frame1, frame2: BGR numpy arrays
+        bins: Number of bins per channel
 
-# Process single video
-result = pipeline.process("path/to/video.mp4", skip_extraction=False)
+    Returns:
+        Chi-square distance (higher = more change)
+    """
+    def compute_histogram(frame):
+        hist = cv2.calcHist(
+            [frame], [0, 1, 2], None,
+            [bins, bins, bins],
+            [0, 256, 0, 256, 0, 256]
+        )
+        cv2.normalize(hist, hist)
+        return hist.flatten()
 
-# Access results
-print(f"Scenes detected: {len(result.scenes)}")
-print(f"Total candidates: {result.total_frames_sampled}")
-print(f"After PHash: {result.frames_after_phash}")
-print(f"After SSIM: {result.frames_after_ssim}")
-print(f"After CLIP: {result.frames_after_clip}")
-print(f"Final frames: {result.final_frame_count}")
-print(f"Reduction rate: {result.reduction_rate:.1%}")
-print(f"Processing time: {result.processing_time_s:.1f}s")
+    hist1 = compute_histogram(frame1)
+    hist2 = compute_histogram(frame2)
 
-# View extracted data
-if result.extraction_result:
-    print(f"Brand: {result.extraction_result['brand']['name']}")
-    print(f"Message: {result.extraction_result['message']['primary_message']}")
-    print(f"CTA: {result.extraction_result['message']['call_to_action']}")
-    print(f"Ad type: {result.extraction_result['_metadata']['ad_type']}")
+    return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CHISQR)
 ```
 
-### Batch Processing
+#### Perceptual Hashing
 
 ```python
-# Process multiple videos
-results = pipeline.process_batch(
-    video_paths=["ad1.mp4", "ad2.mp4", "ad3.mp4"],
-    max_workers=4,
-    skip_extraction=False
-)
+def compute_phash(frame, hash_size=8):
+    """
+    Compute perceptual hash using DCT.
 
-# Analyze results
-for result in results:
-    if result is None:
-        continue
-    print(f"{result.video_path}: {result.final_frame_count} frames ({result.reduction_rate:.1%})")
+    Args:
+        frame: BGR numpy array
+        hash_size: Hash dimension (hash_size x hash_size)
+
+    Returns:
+        imagehash.ImageHash object
+    """
+    import imagehash
+    from PIL import Image
+
+    # Convert to PIL
+    pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+    # Compute pHash
+    return imagehash.phash(pil_image, hash_size=hash_size)
+
+def hamming_distance(hash1, hash2):
+    """Hamming distance between two hashes."""
+    return hash1 - hash2  # imagehash overloads subtraction
 ```
 
-### Custom Configuration
+#### SSIM Computation
 
 ```python
-# Override specific settings
-pipeline = AdVideoPipeline(
-    config_path="config/default.yaml",
-    overrides={
-        "deduplication": {
-            "clip": {"threshold": 0.85}  # More aggressive
-        },
-        "selection": {
-            "max_frames_per_scene": 2   # Fewer frames
-        }
-    }
-)
+def compute_ssim(frame1, frame2):
+    """
+    Compute structural similarity index.
+
+    Args:
+        frame1, frame2: BGR numpy arrays
+
+    Returns:
+        SSIM score (0 to 1, higher = more similar)
+    """
+    from skimage.metrics import structural_similarity
+
+    # Convert to grayscale and resize
+    gray1 = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
+    gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+
+    gray1 = cv2.resize(gray1, (256, 256))
+    gray2 = cv2.resize(gray2, (256, 256))
+
+    return structural_similarity(gray1, gray2)
 ```
 
-### Environment Setup
+#### CLIP Embedding Extraction
 
-```bash
-# Install UV
-curl -LsSf https://astral.sh/uv/install.sh | sh
+```python
+def extract_clip_embeddings_batch(frames, model, preprocess, device, batch_size=32):
+    """
+    Extract CLIP embeddings for multiple frames efficiently.
 
-# Install dependencies
-uv sync
+    Args:
+        frames: List of BGR numpy arrays
+        model: CLIP model
+        preprocess: CLIP preprocessing transform
+        device: torch device
+        batch_size: Batch size for GPU processing
 
-# Set API keys in .env file
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
-GOOGLE_API_KEY=...
+    Returns:
+        Numpy array of shape (num_frames, 512)
+    """
+    import torch
+    from PIL import Image
 
-# Run pipeline
-uv run python -m experiments.pipeline
+    embeddings = []
+
+    for i in range(0, len(frames), batch_size):
+        batch = frames[i:i + batch_size]
+
+        # Convert to PIL and preprocess
+        pil_images = [
+            Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB))
+            for f in batch
+        ]
+
+        batch_tensor = torch.stack([
+            preprocess(img) for img in pil_images
+        ]).to(device)
+
+        # Batch inference
+        with torch.no_grad():
+            batch_embeddings = model.encode_image(batch_tensor)
+            batch_embeddings = batch_embeddings / batch_embeddings.norm(dim=-1, keepdim=True)
+
+        embeddings.append(batch_embeddings.cpu().numpy())
+
+    return np.vstack(embeddings)
 ```
 
----
+#### K-Means Temporal Clustering
 
-## Testing
+```python
+def cluster_and_select_representatives(embeddings, timestamps, n_clusters):
+    """
+    Cluster frames and select representatives closest to centroids.
 
-### Run All Tests
+    Args:
+        embeddings: Numpy array (num_frames, embedding_dim)
+        timestamps: List of timestamps
+        n_clusters: Target number of representatives
 
-```bash
-# Clustering tests
-uv run python -m tests.clustering
+    Returns:
+        Indices of selected representative frames
+    """
+    from sklearn.cluster import KMeans
 
-# Representation tests
-uv run python -m tests.representative
+    n_clusters = min(n_clusters, len(embeddings))
 
-# Hierarchical deduplication tests
-uv run python -m tests.hierarchical
+    # K-means clustering
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    labels = kmeans.fit_predict(embeddings)
 
-# Individual deduplicator tests
-uv run python -m tests.phash
-uv run python -m tests.ssim
-uv run python -m tests.clip
+    # Select frame closest to each centroid
+    selected_indices = []
+    for cluster_id in range(n_clusters):
+        cluster_mask = labels == cluster_id
+        cluster_embeddings = embeddings[cluster_mask]
+        cluster_indices = np.where(cluster_mask)[0]
 
-# End-to-end pipeline test
-uv run python -m experiments.pipeline
+        centroid = kmeans.cluster_centers_[cluster_id]
+
+        # Find closest frame
+        distances = np.linalg.norm(cluster_embeddings - centroid, axis=1)
+        best_local_idx = np.argmin(distances)
+        best_global_idx = cluster_indices[best_local_idx]
+
+        selected_indices.append(best_global_idx)
+
+    # Sort by timestamp
+    selected_indices.sort(key=lambda idx: timestamps[idx])
+
+    return selected_indices
 ```
 
----
+### Memory and Computational Complexity
 
-## Dependencies
+| Stage                | Time Complexity | Space Complexity | Bottleneck               |
+| -------------------- | --------------- | ---------------- | ------------------------ |
+| Scene Detection      | O(n × w × h)    | O(w × h)         | CPU (content analysis)   |
+| Candidate Extraction | O(n × w × h)    | O(k × w × h)     | I/O (video decoding)     |
+| pHash                | O(k²)           | O(k)             | CPU (minimal)            |
+| SSIM                 | O(k² × w × h)   | O(k × w × h)     | CPU (pixel ops)          |
+| CLIP                 | O(k × d + k²)   | O(k × d)         | GPU/CPU (embedding)      |
+| Clustering           | O(i × k × d)    | O(k × d)         | CPU (K-means iterations) |
+| LLM Extraction       | O(m)            | O(m × w × h)     | Network I/O              |
 
-### Core Dependencies
+Where:
 
+- n = total video frames (fps × duration)
+- k = candidate frames (typically 0.1n to 0.5n)
+- m = selected frames (typically 0.01n to 0.05n)
+- w × h = frame resolution
+- d = embedding dimension (512 for ViT-B/32)
+- i = K-means iterations (typically < 50)
+
+## Performance Metrics
+
+### Frame Reduction Metrics
+
+1. **Candidate Reduction Rate**: R_c = 1 - k/n
+
+   - Measures initial sampling efficiency
+   - Typical range: 50-90%
+
+2. **Deduplication Rate**: R_d = 1 - m/k
+
+   - Measures duplicate removal effectiveness
+   - Typical range: 60-80%
+
+3. **Overall Reduction Rate**: R = 1 - m/n = 1 - (1-R_c)(1-R_d)
+   - Composite metric
+   - Target: > 80%
+
+### Cost Metrics
+
+1. **API Cost Reduction**: C_reduction = (C_dense - C_pipeline) / C_dense
+
+   - Direct cost savings
+   - Proportional to frame reduction
+
+2. **Processing Time**: T = T_video + T_dedup + T_select + T_llm
+   - Total pipeline latency
+   - Dominated by video I/O and CLIP embedding
+
+### Quality Metrics
+
+1. **Temporal Coverage**: Distribution of selected frames across scenes
+
+   - Ideal: Proportional to scene duration and complexity
+   - Measured via Gini coefficient
+
+2. **Semantic Diversity**: Average pairwise cosine distance in CLIP space
+
+   - Higher = more diverse frame selection
+   - Target: > 0.3
+
+3. **Narrative Completeness**: Manual annotation of captured events
+   - Percentage of key moments captured
+   - Requires human evaluation
+
+## Future Work
+
+### Short-Term Improvements
+
+1. **GPU Acceleration**
+
+   - Migrate CLIP embedding to GPU
+   - Estimated 5-10x speedup for deduplication stage
+   - Implementation: `device="cuda"` in config
+
+2. **Parallel Video Decoding**
+
+   - Multi-threaded frame extraction
+   - Utilize modern CPU SIMD instructions
+   - Estimated 2-3x speedup for candidate extraction
+
+3. **Audio-Visual Fusion**
+   - Incorporate speech recognition (Whisper)
+   - Detect audio-visual synchronization points
+   - Boost frame importance based on dialogue
+
+### Medium-Term Research
+
+1. **Learned Frame Importance**
+
+   - Train lightweight model to predict frame importance
+   - Input: CLIP embeddings + temporal position + audio features
+   - Replace heuristic scoring with learned scoring
+
+2. **Dynamic Density Adaptation**
+
+   - Per-scene density based on content complexity
+   - Use optical flow magnitude as complexity indicator
+   - Extend beyond simple variance thresholding
+
+3. **Multi-Modal Schema Alignment**
+   - Incorporate audio transcription in extraction
+   - Cross-reference visual and audio information
+   - Detect contradictions or complementary information
+
+### Long-Term Vision
+
+1. **End-to-End Learned Pipeline**
+
+   - Replace rule-based stages with learned modules
+   - Differentiable frame selection using Gumbel-Softmax
+   - Train on downstream task (e.g., ad effectiveness prediction)
+
+2. **Interactive Refinement**
+
+   - User feedback loop for frame selection
+   - Active learning to improve selection policy
+   - Personalized density/quality trade-off
+
+3. **Cross-Modal Retrieval**
+
+   - Index deduplicated frames with CLIP embeddings
+   - Enable text queries: "Find frames with product close-up"
+   - Support similarity search across video corpus
+
+4. **Real-Time Processing**
+   - Optimize for streaming video analysis
+   - Incremental deduplication and selection
+   - Target: < 1 second latency for 30s video
+
+## Citation
+
+If you use this pipeline in your research, please cite:
+
+```bibtex
+@inproceedings{adaptive-video-ad-pipeline-2025,
+  title={Adaptive Density-Based Frame Selection for Efficient Video Advertisement Analysis},
+  author={Abdul Basit Tonmoy},
+  booktitle={Proceedings of the International Conference on Multimedia Retrieval (ICMR)},
+  year={2025},
+  organization={ACM}
+}
 ```
-# Video processing
-opencv-python>=4.8.0
-ffmpeg-python>=0.2.0
-scenedetect>=0.6.0
-
-# Image processing
-Pillow>=10.0.0
-imagehash>=4.3.0
-scikit-image>=0.21.0
-
-# Deep learning
-torch>=2.0.0
-open-clip-torch>=2.20.0
-scikit-learn>=1.3.0
-
-# Audio processing
-librosa>=0.10.0
-soundfile>=0.12.0
-
-# LLM APIs
-anthropic>=0.18.0
-openai>=1.0.0
-google-generativeai>=0.3.0
-
-# Utilities
-python-dotenv>=1.0.0
-pyyaml>=6.0
-numpy>=1.24.0
-```
-
----
-
-## Known Limitations & Future Work
-
-### Current Limitations
-
-1. **Missing CTA Detection:** Closing frames may not always capture call-to-action if it appears only briefly at the very end or in audio. Mitigated by forcing last frame inclusion.
-
-2. **Malformed JSON from Gemini:** Occasional duplicate keys in JSON response. Workaround: Use Claude (more reliable) or add JSON repair logic.
-
-3. **Single-Language Support:** Currently optimized for English text overlays and audio. Multilingual support requires model swaps.
-
-4. **No Streaming Support:** Requires complete video file. Real-time processing would need architectural redesign.
-
-5. **Sequential Batch Processing:** Currently processes videos one-by-one to avoid multiprocessing issues with heavy models.
-
-### Future Enhancements
-
-#### Short-Term (1-2 weeks each)
-
-- **Multilingual Support:** Swap to multilingual OCR (TrOCR) and ASR (Whisper) models
-- **Full Audio-Visual Fusion:** Complete integration of audio event importance boosting
-- **Confidence Scoring:** Multiple extraction passes with agreement-based confidence
-- **JSON Repair:** Robust parsing for malformed LLM responses
-- **True Parallel Batch Processing:** ThreadPoolExecutor with shared CLIP model
-
-#### Medium-Term (1-3 months each)
-
-- **Learned Thresholds:** Meta-learning optimal thresholds per ad category
-- **Quality Metrics:** Automated evaluation against ground truth annotations
-- **Web Interface:** Gradio/Streamlit demo for interactive testing
-- **Dataset Collection:** Large-scale annotation for training and evaluation
-
-#### Long-Term (Research Directions)
-
-- **Streaming Processing:** Online frame selection without future context
-- **Cross-Video Transfer:** Learn from corpus to improve per-video decisions
-- **Causal Analysis:** Link visual elements to ad effectiveness metrics
-- **Temporal Grounding:** Precise event localization with frame-level timestamps
-- **Multi-Modal Fusion:** Joint audio-visual-text understanding
-
----
-
-## References
-
-### Key Papers
-
-1. Hussain, Z., et al. "Automatic Understanding of Image and Video Advertisements." CVPR 2017.
-2. Tan, K., et al. "Large Model based Sequential Keyframe Extraction for Video Summarization." CMLDS 2024.
-3. Hu, W., et al. "M-LLM Based Video Frame Selection for Efficient Video Understanding." CVPR 2025.
-4. Soucek, T., & Lokoč, J. "TransNet V2: An effective deep network architecture for fast shot transition detection." arXiv 2020.
-
-### Tools & Libraries
-
-- [PySceneDetect](https://github.com/Breakthrough/PySceneDetect) - Scene boundary detection
-- [TransNetV2](https://github.com/soCzech/TransNetV2) - Neural shot detection
-- [OpenAI CLIP](https://github.com/openai/CLIP) - Vision-language embeddings
-- [ImageHash](https://github.com/JohannesBuchner/imagehash) - Perceptual hashing
-- [scikit-image](https://scikit-image.org/) - SSIM implementation
-
----
-
-## Contact
-
-**Author:** Abdul Basit Tonmoy  
-**Email:** abdulbasittonmoy@gmail.com  
-**GitHub:** github.com/abtonmoy
-
-For questions, issues, or contributions, please open an issue on the GitHub repository.
-
----
 
 ## License
 
-This project is licensed under the MIT License - see LICENSE file for details.
+This project is licensed under the MIT License. See LICENSE file for details.
+
+## Acknowledgments
+
+This work builds upon several open-source libraries:
+
+- PySceneDetect for scene detection
+- OpenCLIP for vision-language embeddings
+- scikit-image for SSIM computation
+- librosa for audio analysis
+
+We thank the developers of Anthropic Claude, OpenAI GPT-4, and Google Gemini for providing API access for structured extraction experiments.
+
+## Contact
+
+For questions or collaboration inquiries, please contact:
+
+- Abdul Basit Tonmoy (Email: abdulbasittonmoy@gmail.com | github: abtonmoy)
+
+---
+
+Last Updated: December 29, 2025
+Version: 2.0.0

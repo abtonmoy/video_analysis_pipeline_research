@@ -1,5 +1,6 @@
+# src\deduplication\base.py
 """
-Hierarchical deduplication module using pHash, SSIM, and CLIP.
+Base dedup
 """
 
 import logging
