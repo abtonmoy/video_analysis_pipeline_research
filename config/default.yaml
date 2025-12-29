@@ -43,8 +43,11 @@ selection:
 
 # LLM extraction
 extraction:
-  provider: "anthropic" # Options: anthropic, openai, google
-  model: "claude-sonnet-4-20250514"
+  extraction:
+  provider: "gemini"
+  model: "gemini-2.0-flash-exp"
+  # provider: "anthropic" # Options: anthropic, openai, google
+  # model: "claude-sonnet-4-20250514"
   max_tokens: 2000
   temperature: 0.0
 
