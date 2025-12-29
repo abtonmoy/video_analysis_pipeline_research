@@ -1,6 +1,6 @@
 # src\pipeline.py
 """
-Main pipeline orchestrator for video advertisement analysis.
+Main pipeline orchestrator for video advertisement analysis with enhanced audio support.
 """
 
 import time
@@ -37,9 +37,9 @@ class AdVideoPipeline:
     2. Scene boundary detection (with fallback)
     3. Lightweight change detection for candidate extraction
     4. Hierarchical deduplication (pHash → SSIM → CLIP)
-    5. Audio event extraction (optional)
+    5. Audio context extraction (transcription, mood, tempo) [ENHANCED]
     6. Temporal clustering & representative selection (density-based)
-    7. LLM extraction with temporal context
+    7. LLM extraction with temporal + audio context [ENHANCED]
     """
     
     def __init__(
@@ -87,6 +87,11 @@ class AdVideoPipeline:
         """Get default configuration."""
         return {
             "ingestion": {"max_resolution": 720, "extract_audio": True},
+            "audio_analysis": {
+                "enabled": True,
+                "transcription": {"enabled": True, "model": "base"},
+                "performance": {"skip_if_no_speech": True}
+            },
             "change_detection": {"method": "histogram", "threshold": 0.15, "min_interval_ms": 100},
             "scene_detection": {
                 "method": "content",
@@ -112,8 +117,8 @@ class AdVideoPipeline:
                 "adaptive_density": True
             },
             "extraction": {
-                "provider": "anthropic",
-                "model": "claude-sonnet-4-20250514",
+                "provider": "gemini",
+                "model": "gemini-2.0-flash-exp",
                 "schema": {"mode": "adaptive"},
                 "temporal_context": {"enabled": True}
             }
@@ -211,8 +216,8 @@ class AdVideoPipeline:
         if fallback_config.get("artificial_chunks", True):
             logger.warning("Creating artificial scene chunks")
             
-            duration = metadata.duration
             chunk_size = fallback_config.get("chunk_size_s", 10.0)
+            duration = metadata.duration
             
             scene_boundaries = []
             current_time = 0.0
@@ -222,31 +227,94 @@ class AdVideoPipeline:
                 scene_boundaries.append((current_time, end_time))
                 current_time = end_time
             
-            logger.info(f"Created {len(scene_boundaries)} artificial scenes ({chunk_size}s each)")
+            logger.info(f"Created {len(scene_boundaries)} artificial chunks of {chunk_size}s each")
             return scene_boundaries
         
-        # Ultimate fallback: Entire video as one scene
-        logger.warning("Using entire video as single scene")
+        # Last resort: single scene
+        logger.warning("All fallbacks failed, treating entire video as one scene")
         return [(0.0, metadata.duration)]
+    
+    def _extract_audio_context(self, audio_path: str) -> Optional[Dict]:
+        """
+        Extract comprehensive audio context for LLM.
+        
+        NEW: Uses extract_full_context() instead of get_audio_events()
+        
+        Args:
+            audio_path: Path to extracted audio file
+            
+        Returns:
+            Audio context dict or None if extraction fails/disabled
+        """
+        audio_config = self.config.get("audio_analysis", {})
+        
+        # Check if audio analysis is enabled
+        if not audio_config.get("enabled", True):
+            logger.info("Audio analysis disabled in config")
+            return None
+        
+        try:
+            logger.info("Stage 5: Extracting audio context...")
+            
+            # Get transcription settings
+            transcription_config = audio_config.get("transcription", {})
+            transcribe = transcription_config.get("enabled", True)
+            model_size = transcription_config.get("model", "base")
+            
+            # Performance optimization: check for speech first if configured
+            skip_if_no_speech = audio_config.get("performance", {}).get("skip_if_no_speech", False)
+            
+            if skip_if_no_speech and transcribe:
+                # Quick check for speech segments
+                speech_segments = self.audio_extractor.detect_speech_segments(audio_path)
+                if not speech_segments:
+                    logger.info("No speech detected, skipping transcription")
+                    transcribe = False
+            
+            # Extract full context
+            audio_context = self.audio_extractor.extract_full_context(
+                audio_path,
+                transcribe=transcribe,
+                model_size=model_size
+            )
+            
+            logger.info(f"Audio context extracted: "
+                       f"{len(audio_context.get('transcription', []))} segments transcribed, "
+                       f"mood: {audio_context.get('mood', 'unknown')}")
+            
+            return audio_context
+            
+        except ImportError as e:
+            logger.warning(f"Audio dependencies not installed: {e}")
+            logger.warning("Falling back to basic audio events (no transcription)")
+            
+            # Fallback to basic audio events if whisper not installed
+            try:
+                return self.audio_extractor.get_audio_events(audio_path)
+            except Exception as e2:
+                logger.error(f"Basic audio extraction also failed: {e2}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Audio context extraction failed: {e}")
+            return None
     
     def process(
         self,
         video_path: str,
-        skip_extraction: bool = True
+        skip_extraction: bool = False
     ) -> PipelineResult:
         """
-        Process a single video through the pipeline.
+        Process a single video through the complete pipeline.
         
         Args:
             video_path: Path to video file
-            skip_extraction: If True, skip LLM extraction step
+            skip_extraction: If True, skip LLM extraction stage
             
         Returns:
-            PipelineResult with all outputs and metrics
+            PipelineResult with metadata, frames, and extraction results
         """
         start_time = time.time()
-        video_path = str(Path(video_path).resolve())
-        
         logger.info(f"Processing video: {video_path}")
         
         # Stage 1: Load video and extract metadata
@@ -280,17 +348,18 @@ class AdVideoPipeline:
         logger.info("Stage 4: Hierarchical deduplication...")
         deduped_frames, embeddings, dedup_stats = self.deduplicator.deduplicate(candidates)
         
-        # Stage 5: Extract audio events (optional)
-        audio_events = None
+        # Stage 5: Extract audio context (ENHANCED - now includes transcription)
+        audio_context = None
         if audio_path:
-            try:
-                logger.info("Stage 5: Extracting audio events...")
-                audio_events = self.audio_extractor.get_audio_events(audio_path)
-            except Exception as e:
-                logger.warning(f"Audio event extraction failed: {e}")
+            audio_context = self._extract_audio_context(audio_path)
         
         # Stage 6: Select representatives (density-based)
         logger.info("Stage 6: Selecting representative frames...")
+        
+        # For backward compatibility, convert audio_context to audio_events format
+        # if the selector expects the old format
+        audio_events = audio_context if audio_context else None
+        
         selected_candidates = self.selector.select(
             frames=deduped_frames,
             embeddings=embeddings,
@@ -302,14 +371,15 @@ class AdVideoPipeline:
         # Convert to frame list
         selected_frames = [(c.timestamp, c.frame) for c in selected_candidates]
         
-        # Stage 7: LLM Extraction
+        # Stage 7: LLM Extraction (ENHANCED - now passes audio_context)
         extraction_result = None
         if not skip_extraction and selected_frames:
-            logger.info("Stage 7: LLM extraction...")
+            logger.info("Stage 7: LLM extraction with audio context...")
             try:
                 extraction_result = self.extractor.extract(
                     frames=selected_frames,
-                    video_duration=metadata.duration
+                    video_duration=metadata.duration,
+                    audio_context=audio_context  # <-- NEW: Pass audio context
                 )
             except Exception as e:
                 logger.error(f"Extraction failed: {e}")

@@ -1,6 +1,6 @@
 #src\extraction\llm_client.py
 """
-LLM clients and extraction orchestration.
+LLM clients and extraction orchestration with audio context support.
 """
 
 import json
@@ -145,7 +145,7 @@ class GeminiClient(BaseLLMClient):
     
     def __init__(
         self,
-        model: str = "gemini-3.0-flash-exp", #gemini-2.0-flash-exp  
+        model: str = "gemini-3.0-flash-exp",
         max_tokens: int = 2000,
         temperature: float = 0.0
     ):
@@ -208,8 +208,31 @@ class MockLLMClient(BaseLLMClient):
         prompt: str
     ) -> str:
         return json.dumps({
-            "brand": {"name": "Test Brand", "logo_visible": True},
-            "message": {"primary_message": "Test message", "call_to_action": "Buy now"},
+            "brand": {
+                "brand_name_text": "Test Brand",
+                "logo_visible": True,
+                "brand_text_contrast": "high"
+            },
+            "product": {
+                "product_name": "Test Product",
+                "industry": "technology"
+            },
+            "promotion": {
+                "promo_present": True,
+                "promo_text": "50% off",
+                "promo_deadline": "limited time",
+                "price_value": "$9.99"
+            },
+            "call_to_action": {
+                "cta_present": True,
+                "cta_type": "Sign up button"
+            },
+            "visual_elements": {
+                "text_density": "medium"
+            },
+            "content_rating": {
+                "is_nsfw": False
+            },
             "_mock": True,
             "_num_frames": len(frames)
         })
@@ -251,7 +274,7 @@ def get_llm_client(
 
 class AdExtractor:
     """
-    Main extractor class with adaptive schema support.
+    Main extractor class with adaptive schema support and audio context.
     """
     
     def __init__(
@@ -314,7 +337,8 @@ class AdExtractor:
     def extract(
         self,
         frames: List[Tuple[float, np.ndarray]],
-        video_duration: float
+        video_duration: float,
+        audio_context: Optional[Dict] = None
     ) -> Dict[str, Any]:
         """
         Extract structured information from ad frames.
@@ -322,6 +346,7 @@ class AdExtractor:
         Args:
             frames: List of (timestamp, frame) tuples
             video_duration: Total video duration
+            audio_context: Optional dict with audio transcription and features
             
         Returns:
             Extracted information dictionary
@@ -345,7 +370,7 @@ class AdExtractor:
         # Get schema
         schema = get_schema(mode=self.schema_mode, ad_type=ad_type)
         
-        # Build prompt
+        # Build prompt with audio context
         prompt = build_temporal_prompt(
             prepared_frames,
             video_duration,
@@ -353,7 +378,8 @@ class AdExtractor:
             include_timestamps=self.include_timestamps,
             include_time_deltas=self.include_time_deltas,
             include_position_labels=self.include_position_labels,
-            include_narrative_instructions=self.include_narrative_instructions
+            include_narrative_instructions=self.include_narrative_instructions,
+            audio_context=audio_context
         )
         
         # Extract
@@ -375,7 +401,8 @@ class AdExtractor:
                 "ad_type": ad_type,
                 "schema_mode": self.schema_mode,
                 "num_frames": len(frames),
-                "video_duration": video_duration
+                "video_duration": video_duration,
+                "has_audio_context": audio_context is not None
             }
             
             return result

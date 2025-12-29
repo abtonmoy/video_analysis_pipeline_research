@@ -1,39 +1,86 @@
 #config/default.yaml
 
-# Pipeline configuration with density-based adaptive frame selection
+# Pipeline configuration with audio-enhanced extraction
 pipeline:
-  name: "adaptive-ad-pipeline"
-  version: "2.0.0"
+  name: "audio-enhanced-ad-pipeline"
+  version: "2.1.0"
 
 # Video ingestion
 ingestion:
-  max_resolution: 720 # Downscale if larger
-  extract_audio: true
+  max_resolution: 720
+  extract_audio: true # MUST be true for audio features
+
+# Audio analysis (NEW!)
+audio_analysis:
+  enabled: true
+
+  # Speech transcription
+  transcription:
+    enabled: true
+    model: "base" # Options: tiny, base, small, medium, large
+    language: "en"
+
+  # Key phrase extraction
+  key_phrases:
+    enabled: true
+    custom_keywords:
+      - "off"
+      - "sale"
+      - "discount"
+      - "free"
+      - "limited"
+      - "today"
+      - "now"
+      - "call"
+      - "visit"
+      - "sign up"
+      - "download"
+
+  # Speech detection
+  speech_detection:
+    enabled: true
+    aggressiveness: 2 # 0-3, higher = more aggressive VAD
+
+  # Music analysis
+  tempo_analysis:
+    enabled: true
+
+  mood_classification:
+    enabled: true
+    use_ml: false # Set to true for ML-based mood (requires additional deps)
+
+  # Performance tuning
+  performance:
+    # Skip transcription for videos without speech (saves time)
+    skip_if_no_speech: true
+
+    # Cache audio analysis results
+    cache_results: true
+    cache_dir: "outputs/audio_cache"
 
 # Change detection
 change_detection:
-  method: "histogram" # Options: frame_diff, histogram, edge
+  method: "histogram"
   threshold: 0.15
-  min_interval_ms: 100 # Minimum time between candidates
+  min_interval_ms: 100
 
-# Scene detection with fallback
+# Scene detection
 scene_detection:
-  method: "content" # Options: content, threshold, transnet
+  method: "content"
   threshold: 27.0
   min_scene_length_s: 0.5
 
-  # Fallback when no scenes detected (e.g., static/dark videos)
   fallback:
     enabled: true
-    threshold: 15.0 # Much lower threshold for retry
-    artificial_chunks: true # If still no scenes, split into chunks
-    chunk_size_s: 10.0 # Size of artificial chunks
+    threshold: 15.0
+    artificial_chunks: true
+    chunk_size_s: 10.0
 
 # Hierarchical deduplication
 deduplication:
   phash:
     enabled: true
-    threshold: 8 # Hamming distance
+    threshold: 8
   ssim:
     enabled: true
     threshold: 0.92
@@ -41,69 +88,60 @@ deduplication:
     enabled: true
     model: "ViT-B/32"
     threshold: 0.90
-    device: "cpu" # Options: cuda, cpu, auto
-    batch_size: 32 # GPU batching for efficiency
+    device: "cpu"
+    batch_size: 32
 
-# Representative selection (DENSITY-BASED - NEW!)
+# Frame selection with audio-aware importance scoring
 selection:
-  method: "clustering" # Options: clustering, uniform, first
+  method: "clustering"
 
-  # Density-based allocation (replaces fixed max_frames_per_scene)
-  # Allocates frames proportionally to scene duration
-  target_frame_density:
-    0.25 # ~1 frame every 4 seconds of scene duration
-    # Examples:
-    #   10s scene → 2-3 frames
-    #   30s scene → 7-8 frames
-    #   60s scene → 10 frames (capped)
+  target_frame_density: 0.25
+  min_frames_per_scene: 2
+  max_frames_per_scene: 10
+  min_temporal_gap_s: 0.5
 
-  # Per-scene constraints
-  min_frames_per_scene: 2 # Always capture at least start/end
-  max_frames_per_scene: 10 # Cap for very long scenes (40s+)
+  adaptive_density: true
 
-  # Temporal constraints
-  min_temporal_gap_s: 0.5 # Minimum time between selected frames
+  # Audio-based importance boosting (NEW!)
+  audio_importance:
+    enabled: true
+    boost_near_speech: 1.3 # Boost frames near speech start/end
+    boost_near_key_phrases: 1.5 # Boost frames near promotional keywords
+    boost_after_silence: 1.4 # Boost frames after silence (attention reset)
+    proximity_threshold_s: 0.5 # How close to audio event to apply boost
 
-  # Adaptive density based on scene complexity
-  adaptive_density:
-    true # Adjust density based on frame variance
-    # High variance (action) → 30% more frames
-    # Low variance (static) → 30% fewer frames
-
-# LLM extraction
+# LLM extraction with audio context
 extraction:
-  provider: "gemini" # Options: anthropic, openai, gemini
+  provider: "gemini"
   model: "gemini-2.0-flash-exp"
-  # provider: "anthropic"
-  # model: "claude-sonnet-4-20250514"
   max_tokens: 2000
   temperature: 0.0
+
+  # Audio context integration (NEW!)
+  audio_context:
+    enabled: true
+    include_transcription: true
+    include_key_phrases: true
+    include_mood: true
+    max_transcription_segments: 10 # Limit for token efficiency
 
   # Temporal reasoning
   temporal_context:
     enabled: true
     include_timestamps: true
     include_time_deltas: true
-    include_position_labels: true # [OPENING], [CLOSING]
+    include_position_labels: true
     include_narrative_instructions: true
 
-  # Adaptive schema
+  # Schema configuration
   schema:
     mode: "adaptive" # Options: adaptive, fixed, flexible
-    # For adaptive mode: two-pass (detect type, then extract)
-    # For fixed mode: use schema_name
-    # For flexible mode: universal schema with optional fields
-    schema_name: "full" # Used when mode=fixed
-    confidence_sampling:
-      enabled: false
-      n_samples: 3
-      temperature: 0.3
 
 # Batch processing
 batch:
   enabled: true
-  max_workers: 1 # Sequential to avoid multiprocessing issues
-  gpu_batch_size: 32 # CLIP embedding batch size
+  max_workers: 1
+  gpu_batch_size: 32
 
 # Evaluation
 evaluation:
@@ -112,9 +150,10 @@ evaluation:
     - api_cost_reduction
     - processing_time
     - extraction_accuracy
+    - audio_enhancement_impact # NEW!
   save_intermediate: true
 
 # Logging
 logging:
-  level: "INFO" # DEBUG, INFO, WARNING, ERROR
-  log_file: null # Set path to enable file logging
+  level: "INFO"
+  log_file: null

@@ -139,3 +139,4 @@ dmypy.json
 # custom
 data/hussain_videos/
 *.mp4
+download_log.txt

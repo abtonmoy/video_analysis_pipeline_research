@@ -5,19 +5,36 @@ Schema definitions for ad content extraction.
 
 BASE_SCHEMA = {
     "brand": {
-        "name": "string",
+        "brand_name_text": "string (the brand/company name as it appears in text)",
         "logo_visible": "boolean",
-        "logo_timestamps": "list of floats (seconds when logo appears)"
+        "logo_timestamps": "list of floats (seconds when logo appears)",
+        "brand_text_contrast": "string (low/medium/high - how much the brand name stands out visually)"
+    },
+    "product": {
+        "product_name": "string (specific product or service being advertised)",
+        "industry": "string (business category, e.g., automotive, food & beverage, technology)"
+    },
+    "promotion": {
+        "promo_present": "boolean (true if promotional offer exists)",
+        "promo_text": "string or null (ONLY the core offer itself, e.g., '50% off', 'Buy one get one free', NOT full description)",
+        "promo_deadline": "string or null (time limit, e.g., 'ends today', '48 hours', 'limited time')",
+        "price_value": "string or null (specific price mentioned, e.g., '$9.99/mo', '$0.01 down')"
+    },
+    "call_to_action": {
+        "cta_present": "boolean (true if call-to-action exists)",
+        "cta_type": "string or null (action requested, e.g., 'Sign up button', 'Order now', 'Learn more')"
     },
     "message": {
         "primary_message": "string (main message or value proposition)",
-        "call_to_action": "string or null",
         "tagline": "string or null"
     },
-    "creative_elements": {
+    "visual_elements": {
+        "text_density": "string (low/medium/high - amount of text on screen)",
         "dominant_colors": "list of color names",
-        "text_overlays": "list of text shown on screen",
-        "music_mood": "string or null (e.g., upbeat, dramatic, calm)"
+        "text_overlays": "list of text shown on screen"
+    },
+    "content_rating": {
+        "is_nsfw": "boolean (true if explicit sexual content, graphic violence, or not-safe-for-work material)"
     },
     "target_audience": {
         "age_group": "string (e.g., 18-25, 25-40, all ages)",
@@ -28,13 +45,10 @@ BASE_SCHEMA = {
 
 SCHEMA_EXTENSIONS = {
     "product_demo": {
-        "product": {
-            "name": "string",
-            "category": "string",
+        "demo_details": {
             "features_demonstrated": "list of features shown",
-            "price_shown": "string or null"
-        },
-        "demo_steps": "list of demonstration steps shown"
+            "demo_steps": "list of demonstration steps shown"
+        }
     },
     "testimonial": {
         "testimonial": {
@@ -69,20 +83,40 @@ SCHEMA_EXTENSIONS = {
 
 FLEXIBLE_SCHEMA = {
     "brand": {
-        "name": "string",
-        "logo_visible": "boolean"
+        "brand_name_text": "string",
+        "logo_visible": "boolean",
+        "brand_text_contrast": "string (low/medium/high)"
+    },
+    "product": {
+        "product_name": "string",
+        "industry": "string"
     },
     "ad_type": "string (product_demo | testimonial | brand_awareness | tutorial | entertainment)",
+    "promotion": {
+        "promo_present": "boolean",
+        "promo_text": "string or null (core offer only)",
+        "promo_deadline": "string or null",
+        "price_value": "string or null"
+    },
+    "call_to_action": {
+        "cta_present": "boolean",
+        "cta_type": "string or null"
+    },
     "message": {
-        "primary_message": "string",
-        "call_to_action": "string or null"
+        "primary_message": "string"
     },
     "narrative": {
         "opening_hook": "string (how the ad grabs attention)",
         "middle_development": "string (main content)",
         "closing_resolution": "string (conclusion and CTA)"
     },
-    "key_elements": "list of most important visual/audio elements",
+    "visual_elements": {
+        "text_density": "string (low/medium/high)",
+        "key_elements": "list of most important visual elements"
+    },
+    "content_rating": {
+        "is_nsfw": "boolean"
+    },
     "persuasion_techniques": "list of techniques used",
     "target_audience": {
         "demographics": "string",
