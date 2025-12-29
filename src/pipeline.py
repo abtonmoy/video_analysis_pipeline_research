@@ -21,7 +21,7 @@ from src.detection.scene_detector import CandidateFrameExtractor, SceneDetector
 from src.deduplication.hierarchical import create_deduplicator
 from src.selection.representative import create_selector 
 from src.selection.clustering import FrameCandidate
-from src.extraction import create_extractor
+from src.extraction.llm_client import create_extractor
 
 logger = logging.getLogger(__name__)
 
@@ -283,17 +283,8 @@ class AdVideoPipeline:
         max_workers: int = 4,
         skip_extraction: bool = False
     ) -> List[PipelineResult]:
-        """
-        Process multiple videos in parallel.
+        """Process multiple videos in parallel."""
         
-        Args:
-            video_paths: List of video file paths
-            max_workers: Number of parallel workers
-            skip_extraction: If True, skip LLM extraction
-            
-        Returns:
-            List of PipelineResult objects
-        """
         logger.info(f"Processing batch of {len(video_paths)} videos with {max_workers} workers")
         
         results = []
@@ -308,15 +299,18 @@ class AdVideoPipeline:
                     logger.error(f"Failed to process {video_path}: {e}")
                     results.append(None)
         else:
-            # Parallel processing - process sequentially to avoid multiprocessing issues
-            # In production, would use proper multiprocessing with serializable config
-            for video_path in video_paths:
+            # TRUE parallel processing
+            from concurrent.futures import ThreadPoolExecutor  # Use threads instead of processes
+            
+            def process_single(video_path):
                 try:
-                    result = self.process(video_path, skip_extraction=skip_extraction)
-                    results.append(result)
+                    return self.process(video_path, skip_extraction=skip_extraction)
                 except Exception as e:
                     logger.error(f"Failed to process {video_path}: {e}")
-                    results.append(None)
+                    return None
+            
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                results = list(executor.map(process_single, video_paths))
         
         successful = sum(1 for r in results if r is not None)
         logger.info(f"Batch complete: {successful}/{len(video_paths)} videos processed successfully")
