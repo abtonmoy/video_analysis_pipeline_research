@@ -1,16 +1,16 @@
-#config/default.yaml
+# config/default.yaml
 
-# Pipeline configuration with audio-enhanced extraction
+# Pipeline configuration with audio-enhanced extraction and NMS-based frame selection
 pipeline:
   name: "audio-enhanced-ad-pipeline"
-  version: "2.1.0"
+  version: "2.2.0"
 
 # Video ingestion
 ingestion:
   max_resolution: 720
   extract_audio: true # MUST be true for audio features
 
-# Audio analysis (NEW!)
+# Audio analysis
 audio_analysis:
   enabled: true
 
@@ -35,6 +35,15 @@ audio_analysis:
       - "visit"
       - "sign up"
       - "download"
+      - "order"
+      - "buy"
+      - "save"
+      - "offer"
+      - "exclusive"
+      - "hurry"
+      - "act now"
+      - "don't miss"
+      - "click"
 
   # Speech detection
   speech_detection:
@@ -91,33 +100,71 @@ deduplication:
     device: "cpu"
     batch_size: 32
 
-# Frame selection with audio-aware importance scoring
+# Frame selection with NMS-based importance-aware selection
 selection:
-  method: "clustering"
+  # Selection method: "nms" (recommended), "kmeans", "uniform", or "hybrid"
+  # - nms: Non-Maximum Suppression using importance scores (best for ads)
+  # - kmeans: K-means clustering on CLIP embeddings (good for semantic diversity)
+  # - uniform: Uniform temporal sampling (simple fallback)
+  # - hybrid: NMS with K-means diversity constraints (balanced approach)
+  method: "kmeans"
 
-  target_frame_density: 0.25
+  # Density and constraints
+  target_frame_density: 0.25 # ~1 frame every 4 seconds
   min_frames_per_scene: 2
   max_frames_per_scene: 10
   min_temporal_gap_s: 0.5
 
+  # Adaptive density adjusts frame count based on scene complexity
   adaptive_density: true
 
-  # Audio-based importance boosting (NEW!)
+  # NMS-specific configuration
+  nms:
+    # Semantic similarity threshold for suppression (0.0-1.0)
+    # Higher = more aggressive suppression of similar frames
+    semantic_threshold: 0.88
+
+    # Whether to use CLIP embedding similarity for suppression
+    # Disable if you want purely temporal NMS
+    use_semantic_suppression: true
+
+    # Bonus for selecting frames that are semantically different from already-selected
+    # Higher = more diverse selections
+    diversity_bonus: 0.1
+
+  # Importance scoring configuration
+  importance:
+    enabled: true
+
+    # Weights for different importance signals (1.0 = normal weight)
+    position_weight: 1.0 # Video position (opening/closing boost)
+    scene_weight: 1.0 # Scene position (scene start/end boost)
+    audio_weight: 1.0 # Audio events (speech, silence, energy)
+
+    # Multiplier for frames near promotional key phrases
+    # This is the strongest signal for ad extraction
+    key_phrase_boost: 1.5
+
+    # Proximity threshold for audio event matching
+    proximity_threshold_s: 0.5
+
+  # Legacy audio_importance config (mapped to new importance config)
+  # Kept for backward compatibility
   audio_importance:
     enabled: true
-    boost_near_speech: 1.3 # Boost frames near speech start/end
-    boost_near_key_phrases: 1.5 # Boost frames near promotional keywords
-    boost_after_silence: 1.4 # Boost frames after silence (attention reset)
-    proximity_threshold_s: 0.5 # How close to audio event to apply boost
+    boost_near_speech: 1.3
+    boost_near_key_phrases: 1.5
+    boost_after_silence: 1.4
+    proximity_threshold_s: 0.5
 
 # LLM extraction with audio context
 extraction:
   provider: "gemini"
-  model: "gemini-2.0-flash-exp"
-  max_tokens: 2000
+  model: "gemini-2.5-pro" #"gemini-2.0-flash-exp"
+  max_tokens: 4000
   temperature: 0.0
 
-  # Audio context integration (NEW!)
+  # Audio context integration
   audio_context:
     enabled: true
     include_transcription: true
@@ -150,10 +197,23 @@ evaluation:
     - api_cost_reduction
     - processing_time
     - extraction_accuracy
-    - audio_enhancement_impact # NEW!
+    - audio_enhancement_impact
+    - importance_score_lift # NEW: measures if NMS selects higher-importance frames
   save_intermediate: true
 
 # Logging
 logging:
   level: "INFO"
   log_file: null
+
+# Output configuration
+output:
+  save_selected_frames: false
+  save_frame_metadata: true
+  output_dir: "outputs"
+
+  # Debug outputs
+  debug:
+    save_all_candidates: false
+    save_importance_scores: true
+    save_suppression_reasons: false # Log why frames were suppressed by NMS

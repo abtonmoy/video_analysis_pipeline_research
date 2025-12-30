@@ -6,7 +6,7 @@ from src.pipeline import AdVideoPipeline
 import json
 
 def main():
-    print("Test pipeline")
+    print("Test pipeline nms")
     
     pipeline = AdVideoPipeline(
     config_path="config/default.yaml"
@@ -20,7 +20,7 @@ def main():
     #     }
     # }
 )
-    video = r"data\hussain_videos\eEgMjH9bVgQ.mp4"
+    video = r"data\hussain_videos\_wZSB0b9OCA.mp4"
     
     result = pipeline.process(
         video,
