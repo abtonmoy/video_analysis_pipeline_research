@@ -91,7 +91,7 @@ deduplication:
     enabled: true
     threshold: 8
   ssim:
-    enabled: true
+    enabled: false
     threshold: 0.92
   clip:
     enabled: true
