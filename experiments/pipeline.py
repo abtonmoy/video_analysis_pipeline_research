@@ -20,7 +20,7 @@ def main():
         #     }
         # }
     )
-    video = r"data\hussain_videos\0B79RkBxSgU.mp4"
+    video = r"data\hussain_videos\AK88MQWsYj8.mp4"
     
     result = pipeline.process(
         video,
@@ -35,7 +35,7 @@ def main():
     print(f"Scenes: {len(result.scenes)}")
     print(f"Total candidates: {result.total_frames_sampled}")
     print(f"After Hash Voting (pHash+dHash+wHash): {result.frames_after_phash}")
-    print(f"After SSIM: {result.frames_after_ssim}")
+    print(f"After SSIM/LPIPS: {result.frames_after_ssim}")
     print(f"After CLIP: {result.frames_after_clip}")
     print(f"Final frames: {result.final_frame_count}")
     print(f"Reduction: {result.reduction_rate:.1%}")

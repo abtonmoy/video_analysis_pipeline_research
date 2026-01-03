@@ -2,8 +2,8 @@
 
 # Pipeline configuration with audio-enhanced extraction and NMS-based frame selection
 pipeline:
-  name: "audio-enhanced-ad-pipeline"
-  version: "2.2.0"
+  name: "video-ad-pipeline"
+  version: "2.2.2"
 
 # Video ingestion
 ingestion:
@@ -97,6 +97,11 @@ deduplication:
   ssim:
     enabled: false
     threshold: 0.92
+  lpips:
+    enabled: true # Toggle LPIPS on/off
+    threshold: 0.15
+    net: "squeeze"
+    device: "auto"
   clip:
     enabled: true
     model: "ViT-B/32"
@@ -164,7 +169,7 @@ selection:
 # LLM extraction with audio context
 extraction:
   provider: "gemini"
-  model: "gemini-2.5-pro" #"gemini-2.0-flash-exp"
+  model: "gemini-3-flash-preview" #"gemini-3-pro-preview" "gemini-2.5-flash" #"gemini-2.5-pro" #"gemini-2.0-flash-exp"
   max_tokens: 4000
   temperature: 0.0
 

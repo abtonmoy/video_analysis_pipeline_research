@@ -16,6 +16,7 @@ from .phash import PHashDeduplicator
 from .dhash import DHashDeduplicator
 from .whash import WHashDeduplicator
 from .ssim import SSIMDeduplicator
+from .lpips import LPIPSDeduplicator
 from .clip_embed import CLIPDeduplicator
 
 logger = logging.getLogger(__name__)
@@ -138,14 +139,18 @@ class HierarchicalDeduplicator:
     """
     Hierarchical deduplication using cheap-to-expensive methods.
     
-    Pipeline: Hash Voting (pHash + dHash + wHash) -> SSIM -> CLIP
+    Pipeline: Hash Voting (pHash + dHash + wHash) -> SSIM/LPIPS -> CLIP
     
     The first stage uses a voting system across three complementary hash algorithms:
     - pHash: Frequency domain - good for scaling/compression
     - dHash: Gradient domain - excellent for brightness changes
     - wHash: Wavelet domain - robust to noise
     
-    Each subsequent stage filters frames before passing to the more expensive next stage.
+    The second stage can use either:
+    - SSIM: Traditional structural similarity (faster, good for identical frames)
+    - LPIPS: Learned perceptual similarity (slower, better human correlation)
+    
+    The final stage (CLIP) provides semantic understanding for high-level deduplication.
     """
     
     def __init__(
@@ -160,6 +165,11 @@ class HierarchicalDeduplicator:
         # SSIM parameters
         ssim_enabled: bool = False,
         ssim_threshold: float = 0.92,
+        # LPIPS parameters
+        lpips_enabled: bool = False,
+        lpips_threshold: float = 0.15,
+        lpips_net: str = "alex",
+        lpips_device: str = "auto",
         # CLIP parameters
         clip_enabled: bool = True,
         clip_model: str = "ViT-B-32",
@@ -176,8 +186,12 @@ class HierarchicalDeduplicator:
             whash_threshold: Max Hamming distance for wHash
             min_hash_votes: Minimum votes needed to consider similar (1-3)
             hash_size: Size of hash for dHash and wHash
-            ssim_enabled: Enable SSIM stage
-            ssim_threshold: SSIM similarity threshold
+            ssim_enabled: Enable SSIM structural similarity stage
+            ssim_threshold: SSIM similarity threshold (higher = stricter)
+            lpips_enabled: Enable LPIPS perceptual similarity stage
+            lpips_threshold: Max LPIPS distance to consider similar (lower = stricter)
+            lpips_net: LPIPS network backbone ("alex", "vgg", "squeeze")
+            lpips_device: Device for LPIPS ('auto', 'cuda', 'cpu')
             clip_enabled: Enable CLIP semantic stage
             clip_model: CLIP model name
             clip_pretrained: CLIP pretrained weights
@@ -187,6 +201,7 @@ class HierarchicalDeduplicator:
         """
         self.hash_voting_enabled = hash_voting_enabled
         self.ssim_enabled = ssim_enabled
+        self.lpips_enabled = lpips_enabled
         self.clip_enabled = clip_enabled
         
         # Initialize hash voting deduplicator
@@ -202,6 +217,14 @@ class HierarchicalDeduplicator:
         # Initialize SSIM deduplicator
         if ssim_enabled:
             self.ssim = SSIMDeduplicator(threshold=ssim_threshold)
+        
+        # Initialize LPIPS deduplicator
+        if lpips_enabled:
+            self.lpips = LPIPSDeduplicator(
+                threshold=lpips_threshold,
+                net=lpips_net,
+                device=lpips_device
+            )
         
         # Initialize CLIP deduplicator
         if clip_enabled:
@@ -242,10 +265,15 @@ class HierarchicalDeduplicator:
                 f"(min_votes={self.hash_voter.min_votes})"
             )
         
-        # Stage 2: SSIM (medium speed)
+        # Stage 2a: SSIM (structural similarity - faster)
         if self.ssim_enabled and len(current_frames) > 1:
             current_frames = self.ssim.deduplicate(current_frames)
             stats["after_ssim"] = len(current_frames)
+        
+        # Stage 2b: LPIPS (learned perceptual similarity - slower but better)
+        if self.lpips_enabled and len(current_frames) > 1:
+            current_frames = self.lpips.deduplicate(current_frames)
+            stats["after_lpips"] = len(current_frames)
         
         # Stage 3: CLIP (slowest but semantic understanding)
         if self.clip_enabled and len(current_frames) > 1:
@@ -285,6 +313,12 @@ def create_deduplicator(config: Dict[str, Any]) -> HierarchicalDeduplicator:
                     "enabled": False,
                     "threshold": 0.92
                 },
+                "lpips": {
+                    "enabled": False,
+                    "threshold": 0.15,
+                    "net": "alex",
+                    "device": "auto"
+                },
                 "clip": {
                     "enabled": True,
                     "model": "ViT-B/32",
@@ -300,6 +334,8 @@ def create_deduplicator(config: Dict[str, Any]) -> HierarchicalDeduplicator:
     """
     dedup_config = config.get("deduplication", {})
     hash_config = dedup_config.get("hash_voting", {})
+    ssim_config = dedup_config.get("ssim", {})
+    lpips_config = dedup_config.get("lpips", {})
     
     # Normalize CLIP model name (handle both "ViT-B/32" and "ViT-B-32" formats)
     clip_model = dedup_config.get("clip", {}).get("model", "ViT-B-32")
@@ -314,8 +350,13 @@ def create_deduplicator(config: Dict[str, Any]) -> HierarchicalDeduplicator:
         min_hash_votes=hash_config.get("min_votes", 2),
         hash_size=hash_config.get("hash_size", 8),
         # SSIM parameters
-        ssim_enabled=dedup_config.get("ssim", {}).get("enabled", False),
-        ssim_threshold=dedup_config.get("ssim", {}).get("threshold", 0.92),
+        ssim_enabled=ssim_config.get("enabled", False),
+        ssim_threshold=ssim_config.get("threshold", 0.92),
+        # LPIPS parameters
+        lpips_enabled=lpips_config.get("enabled", False),
+        lpips_threshold=lpips_config.get("threshold", 0.15),
+        lpips_net=lpips_config.get("net", "alex"),
+        lpips_device=lpips_config.get("device", "auto"),
         # CLIP parameters
         clip_enabled=dedup_config.get("clip", {}).get("enabled", True),
         clip_model=clip_model,
