@@ -107,6 +107,7 @@ class AdVideoPipeline:
             "deduplication": {
                 "hash_voting": {"enabled": True, "phash_threshold": 8, "dhash_threshold": 8, "whash_threshold": 8, "min_votes": 2},
                 "ssim": {"enabled": False, "threshold": 0.92},
+                "lpips": {"enabled": False, "threshold": 0.15, "net": "alex", "device": "auto"},
                 "clip": {"enabled": True, "model": "ViT-B-32", "threshold": 0.90, "device": "auto"}
             },
             "selection": {
@@ -471,6 +472,10 @@ class AdVideoPipeline:
             for c in selected_candidates
         ]
         
+        # Determine the intermediate stage result (SSIM or LPIPS, whichever was used)
+        after_hash = dedup_stats.get("after_hash_voting", total_frames_sampled)
+        after_perceptual = dedup_stats.get("after_lpips", dedup_stats.get("after_ssim", after_hash))
+        
         result = PipelineResult(
             video_path=video_path,
             metadata=metadata,
@@ -478,9 +483,9 @@ class AdVideoPipeline:
             selected_frames=frame_infos,
             extraction_result=extraction_result,
             total_frames_sampled=total_frames_sampled,
-            frames_after_phash=dedup_stats.get("after_hash_voting", total_frames_sampled),
-            frames_after_ssim=dedup_stats.get("after_ssim", dedup_stats.get("after_hash_voting", total_frames_sampled)),
-            frames_after_clip=dedup_stats.get("after_clip", dedup_stats.get("after_ssim", total_frames_sampled)),
+            frames_after_phash=after_hash,
+            frames_after_ssim=after_perceptual,
+            frames_after_clip=dedup_stats.get("after_clip", after_perceptual),
             final_frame_count=len(selected_frames),
             processing_time_s=processing_time
         )
