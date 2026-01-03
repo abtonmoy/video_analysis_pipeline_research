@@ -87,9 +87,13 @@ scene_detection:
 
 # Hierarchical deduplication
 deduplication:
-  phash:
+  hash_voting:
     enabled: true
-    threshold: 8
+    phash_threshold: 8
+    dhash_threshold: 8
+    whash_threshold: 8
+    min_votes: 2
+    hash_size: 8
   ssim:
     enabled: false
     threshold: 0.92
