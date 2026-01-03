@@ -9,17 +9,17 @@ def main():
     print("Test pipeline")
     
     pipeline = AdVideoPipeline(
-    config_path="config/default.yaml"
-    # overrides={
-    #     "scene_detection": {
-    #         "threshold": 20.0  # Lower threshold
-    #     },
-    #     "selection": {
-    #         "max_frames_per_scene": 6,  # More frames
-    #         "min_temporal_gap_s": 3.0   # Larger gap
-    #     }
-    # }
-)
+        config_path="config/default.yaml"
+        # overrides={
+        #     "scene_detection": {
+        #         "threshold": 20.0  # Lower threshold
+        #     },
+        #     "selection": {
+        #         "max_frames_per_scene": 6,  # More frames
+        #         "min_temporal_gap_s": 3.0   # Larger gap
+        #     }
+        # }
+    )
     video = r"data\hussain_videos\0B79RkBxSgU.mp4"
     
     result = pipeline.process(
@@ -34,7 +34,7 @@ def main():
     print(f"Duration: {result.metadata.duration}s")
     print(f"Scenes: {len(result.scenes)}")
     print(f"Total candidates: {result.total_frames_sampled}")
-    print(f"After PHash: {result.frames_after_phash}")
+    print(f"After Hash Voting (pHash+dHash+wHash): {result.frames_after_phash}")
     print(f"After SSIM: {result.frames_after_ssim}")
     print(f"After CLIP: {result.frames_after_clip}")
     print(f"Final frames: {result.final_frame_count}")
