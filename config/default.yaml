@@ -111,8 +111,8 @@ deduplication:
 
 # Frame selection with NMS-based importance-aware selection
 selection:
-  # Selection method: "nms" (recommended), "kmeans", "uniform", or "hybrid"
-  # - nms: Non-Maximum Suppression using importance scores (best for ads)
+  # Selection method: "nms", "kmeans", "uniform", or "hybrid"
+  # - nms: Non-Maximum Suppression using importance scores
   # - kmeans: K-means clustering on CLIP embeddings (good for semantic diversity)
   # - uniform: Uniform temporal sampling (simple fallback)
   # - hybrid: NMS with K-means diversity constraints (balanced approach)
