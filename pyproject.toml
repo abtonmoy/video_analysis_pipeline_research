@@ -41,6 +41,7 @@ dependencies = [
     "lpips>=0.1.4",
     "moviepy>=1.0.3",
     "rich>=14.2.0",
+    "graphviz>=0.21",
 ]
 
 [dependency-groups]
