@@ -79,6 +79,7 @@ data/*/videos/*.avi
 # Output directories
 output/
 outputs/
+# results/
 results/
 results1/
 temp/
