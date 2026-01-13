@@ -20,7 +20,7 @@ def main():
         #     }
         # }
     )
-    video = r"data\hussain_videos\AK88MQWsYj8.mp4"
+    video = r"data/hussain_videos/_NJKQkQu3NI.mp4"
     
     result = pipeline.process(
         video,
