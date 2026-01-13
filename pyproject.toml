@@ -1,0 +1,51 @@
+[project]
+name = "video-analysis-pipeline-research"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.75.0",
+    "ffmpeg-python>=0.2.0",
+    "google-genai>=1.56.0",
+    "google-generativeai>=0.8.6",
+    "imagehash>=4.3.2",
+    "ipykernel>=7.1.0",
+    "librosa>=0.10.1",
+    "llvmlite>=0.41.0",
+    "matplotlib>=3.10.8",
+    "numba>=0.58.0",
+    "numpy>=1.24,<2.4",
+    "open-clip-torch>=3.2.0",
+    "openai>=2.14.0",
+    "openai-whisper>=20250625",
+    "opencv-python>=4.11.0.86",
+    "pandas>=2.3.3",
+    "pillow>=12.0.0",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.3",
+    "scenedetect[opencv]>=0.6.7.1",
+    "scikit-image>=0.26.0",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.16.3",
+    "seaborn>=0.13.2",
+    "sentence-transformers>=5.2.0",
+    "soundfile>=0.13.1",
+    "torch>=2.9.1",
+    "torchvision>=0.24.1",
+    "tqdm>=4.67.1",
+    "transformers>=4.57.3",
+    "webrtcvad>=2.0.10",
+    "yt-dlp>=2025.12.8",
+    "setuptools>=70.0.0,<81",
+    "lpips>=0.1.4",
+    "moviepy>=1.0.3",
+    "rich>=14.2.0",
+    "graphviz>=0.21",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]

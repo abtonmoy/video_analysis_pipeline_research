@@ -1,0 +1,228 @@
+# config/default.yaml
+
+# Pipeline configuration with audio-enhanced extraction and NMS-based frame selection
+pipeline:
+  name: "video-ad-pipeline"
+  version: "2.2.2"
+
+# Video ingestion
+ingestion:
+  max_resolution: 720
+  extract_audio: true # MUST be true for audio features
+
+# Audio analysis
+audio_analysis:
+  enabled: true
+
+  # Speech transcription
+  transcription:
+    enabled: true
+    model: "base" # Options: tiny, base, small, medium, large
+    language: "en"
+
+  # Key phrase extraction
+  key_phrases:
+    enabled: true
+    custom_keywords:
+      - "off"
+      - "sale"
+      - "discount"
+      - "free"
+      - "limited"
+      - "today"
+      - "now"
+      - "call"
+      - "visit"
+      - "sign up"
+      - "download"
+      - "order"
+      - "buy"
+      - "save"
+      - "offer"
+      - "exclusive"
+      - "hurry"
+      - "act now"
+      - "don't miss"
+      - "click"
+
+  # Speech detection
+  speech_detection:
+    enabled: true
+    aggressiveness: 2 # 0-3, higher = more aggressive VAD
+
+  # Music analysis
+  tempo_analysis:
+    enabled: true
+
+  mood_classification:
+    enabled: true
+    use_ml: false # Set to true for ML-based mood (requires additional deps)
+
+  # Performance tuning
+  performance:
+    # Skip transcription for videos without speech (saves time)
+    skip_if_no_speech: true
+
+    # Cache audio analysis results
+    cache_results: true
+    cache_dir: "outputs/audio_cache"
+
+# Change detection
+change_detection:
+  method: "histogram"
+  threshold: 0.15
+  min_interval_ms: 100
+
+# Scene detection
+scene_detection:
+  method: "content"
+  threshold: 27.0
+  min_scene_length_s: 0.5
+
+  fallback:
+    enabled: true
+    threshold: 15.0
+    artificial_chunks: true
+    chunk_size_s: 10.0
+
+# Hierarchical deduplication
+deduplication:
+  hash_voting:
+    enabled: true
+    phash_threshold: 8
+    dhash_threshold: 8
+    whash_threshold: 8
+    min_votes: 2
+    hash_size: 8
+  ssim:
+    enabled: false
+    threshold: 0.92
+  lpips:
+    enabled: true # Toggle LPIPS on/off
+    threshold: 0.15
+    net: "squeeze"
+    device: "auto"
+  clip:
+    enabled: true
+    model: "ViT-B/32"
+    threshold: 0.90
+    device: "cuda"
+    batch_size: 32
+
+# Frame selection with NMS-based importance-aware selection
+selection:
+  # Selection method: "nms", "kmeans", "uniform", or "hybrid"
+  # - nms: Non-Maximum Suppression using importance scores
+  # - kmeans: K-means clustering on CLIP embeddings (good for semantic diversity)
+  # - uniform: Uniform temporal sampling (simple fallback)
+  # - hybrid: NMS with K-means diversity constraints (balanced approach)
+  method: "hybrid"
+
+  # Density and constraints
+  target_frame_density: 0.25 # ~1 frame every 4 seconds
+  min_frames_per_scene: 2
+  max_frames_per_scene: 10
+  min_temporal_gap_s: 0.5
+
+  # Adaptive density adjusts frame count based on scene complexity
+  adaptive_density: true
+
+  # NMS-specific configuration
+  nms:
+    # Semantic similarity threshold for suppression (0.0-1.0)
+    # Higher = more aggressive suppression of similar frames
+    semantic_threshold: 0.88
+
+    # Whether to use CLIP embedding similarity for suppression
+    # Disable if you want purely temporal NMS
+    use_semantic_suppression: true
+
+    # Bonus for selecting frames that are semantically different from already-selected
+    # Higher = more diverse selections
+    diversity_bonus: 0.1
+
+  # Importance scoring configuration
+  importance:
+    enabled: true
+
+    # Weights for different importance signals (1.0 = normal weight)
+    position_weight: 1.0 # Video position (opening/closing boost)
+    scene_weight: 1.0 # Scene position (scene start/end boost)
+    audio_weight: 1.0 # Audio events (speech, silence, energy)
+
+    # Multiplier for frames near promotional key phrases
+    # This is the strongest signal for ad extraction
+    key_phrase_boost: 1.5
+
+    # Proximity threshold for audio event matching
+    proximity_threshold_s: 0.5
+
+  # Legacy audio_importance config (mapped to new importance config)
+  # Kept for backward compatibility
+  audio_importance:
+    enabled: true
+    boost_near_speech: 1.3
+    boost_near_key_phrases: 1.5
+    boost_after_silence: 1.4
+    proximity_threshold_s: 0.5
+
+# LLM extraction with audio context
+extraction:
+  provider: "gemini"
+  model: "gemini-3-flash-preview" #"gemini-3-pro-preview" "gemini-2.5-flash" #"gemini-2.5-pro" #"gemini-2.0-flash-exp"
+  max_tokens: 4000
+  temperature: 0.0
+
+  # Audio context integration
+  audio_context:
+    enabled: true
+    include_transcription: true
+    include_key_phrases: true
+    include_mood: true
+    max_transcription_segments: 10 # Limit for token efficiency
+
+  # Temporal reasoning
+  temporal_context:
+    enabled: true
+    include_timestamps: true
+    include_time_deltas: true
+    include_position_labels: true
+    include_narrative_instructions: true
+
+  # Schema configuration
+  schema:
+    mode: "adaptive" # Options: adaptive, fixed, flexible
+
+# Batch processing
+batch:
+  enabled: true
+  max_workers: 1
+  gpu_batch_size: 32
+
+# Evaluation
+evaluation:
+  metrics:
+    - frame_reduction_rate
+    - api_cost_reduction
+    - processing_time
+    - extraction_accuracy
+    - audio_enhancement_impact
+    - importance_score_lift # NEW: measures if NMS selects higher-importance frames
+  save_intermediate: true
+
+# Logging
+logging:
+  level: "INFO"
+  log_file: null
+
+# Output configuration
+output:
+  save_selected_frames: false
+  save_frame_metadata: true
+  output_dir: "outputs"
+
+  # Debug outputs
+  debug:
+    save_all_candidates: false
+    save_importance_scores: true
+    save_suppression_reasons: false # Log why frames were suppressed by NMS

@@ -1,0 +1,22 @@
+# Inherit from default
+_extends: default.yaml
+
+# Override for speed
+ingestion:
+  max_resolution: 480 # Lower resolution
+
+deduplication:
+  ssim:
+    enabled: false # Skip SSIM layer
+  clip:
+    model: "ViT-B/16" # Faster CLIP model
+    threshold: 0.85 # More aggressive dedup
+    batch_size: 64
+
+selection:
+  max_frames_per_scene: 2 # Fewer frames
+
+extraction:
+  schema:
+    mode: "fixed"
+    schema_name: "minimal"
