@@ -63,6 +63,10 @@ class BenchmarkRunner:
         self.full_only = full_only
         self.skip_gpu = skip_gpu
 
+        # Seconds to wait between LLM calls to avoid rate limits
+        bench_cfg = config.get("benchmark", {})
+        self.llm_throttle = bench_cfg.get("extraction", {}).get("throttle_seconds", 4.0)
+
         # Determine which extraction modes to run
         self.run_bare = not full_only and not selection_only
         self.run_full = not bare_only and not selection_only
@@ -375,6 +379,10 @@ class BenchmarkRunner:
                 )
                 llm_calls += result["llm_calls"]
 
+                # Throttle between baselines if LLM calls were made
+                if result["llm_calls"] > 0 and not self.selection_only:
+                    time.sleep(self.llm_throttle)
+
             except Exception as e:
                 logger.error(f"  {method.name} failed: {e}", exc_info=True)
                 video_result["baselines"][method.name] = {"error": str(e)}
@@ -421,6 +429,10 @@ class BenchmarkRunner:
             data["bare_vs_pipeline"] = bare_cmp
             csv_row.update({f"bare_{k}": v for k, v in bare_cmp.items()})
             calls += 1
+
+            # Throttle between LLM calls to avoid rate limits
+            if self.run_full:
+                time.sleep(self.llm_throttle)
 
         # 4. Full extraction
         if self.run_full and frames:
