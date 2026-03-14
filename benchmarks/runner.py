@@ -19,8 +19,8 @@ import pandas as pd
 from benchmarks.base import BaselineMethod, decode_frames_at_interval, get_video_info
 from benchmarks.extraction_wrapper import ExtractionWrapper
 from benchmarks.metrics import compare_extractions, compute_selection_metrics
-from benchmarks.methods import ALL_METHODS
-
+# from benchmarks.methods import ALL_METHODS
+from benchmarks import ALL_METHODS
 logger = logging.getLogger(__name__)
 
 

@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "started_at": "2026-03-14T12:21:34.546127",
+    "video_directory": "data\\ads\\ads\\videos",
+    "pipeline_results": "test_results/analysis.json",
+    "total_videos": 23,
+    "successful": 0,
+    "failed": 23,
+    "total_llm_calls": 0,
+    "last_updated": "2026-03-14T12:21:35.534250"
+  },
+  "per_video": {
+    "v0003.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0004.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0001.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0005.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0002.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0006.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0007.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0008.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0009.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0010.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0011.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0013.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0014.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0012.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0015.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0016.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0017.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0018.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0019.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0020.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0021.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0022.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    },
+    "v0023.mp4": {
+      "error": "cannot import name 'ALL_METHODS' from 'benchmarks' (C:\\research_projects\\video_analysis_pipeline_research\\benchmarks\\__init__.py)"
+    }
+  }
+}
