@@ -1,0 +1,119 @@
+*   [33mda6696d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Merge branch 'vector'
+[31m|[m[32m\[m  
+[31m|[m * [33m2fa5030[m[33m ([m[1;31morigin/vector[m[33m, [m[1;32mvector[m[33m)[m added the analysis for the results and separated the videos with errors
+[31m|[m * [33m5c89a0a[m added the analysis for the results and separated the videos with errors
+*   [33mcb1f5dc[m[33m ([m[1;31morigin/main[m[33m)[m Merge pull request #36 from abtonmoy/master
+[33m|[m[34m\[m  
+[33m|[m * [33m5d5e37a[m[33m ([m[1;31morigin/master[m[33m)[m added readme for selection module
+* [34m|[m [33md958ee6[m Merge pull request #35 from abtonmoy/master
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m3deff9b[m added readme for ingestion module
+[35m|[m * [33mac419d7[m added readme for detection module
+* [36m|[m [33m0967288[m Merge pull request #34 from abtonmoy/master
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m2d2e694[m added readme for deduplication
+* [1;32m|[m [33ma7cc330[m Merge pull request #33 from abtonmoy/master
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33ma0119a4[m added system diagram for paper
+* [1;34m|[m [33m233cfd6[m Merge pull request #32 from abtonmoy/master
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m1144b76[m added system diagram for paper
+* [1;36m|[m [33ma298189[m Merge pull request #31 from abtonmoy/master
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m6bb2c05[m M -> prompts and schema to match with the hussain et al. dataset which we'll use as ground truth later on
+[31m|[m * [33m8064434[m M -> main.py and improved batch processing with nice console view using rich
+* [32m|[m [33m1af3da4[m Merge pull request #30 from abtonmoy/master
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m126a74d[m M -> main.py and improved batch processing
+* [34m|[m [33mdd1eabf[m Merge pull request #29 from abtonmoy/master
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m09af45a[m M -> modified defalut
+* [36m|[m [33mbb94193[m Merge pull request #28 from abtonmoy/master
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m8e23c43[m A -> added lpips dedup
+* [1;32m|[m [33m12a6b55[m Merge pull request #27 from abtonmoy/master
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m1709fac[m A -> added  dhash and whash and new voting system to enforce ensemble method. M -> modified the hierarchical and pipeline to work with the new vote(phash, whash, dhash) method
+* [1;34m|[m [33md61af01[m Merge pull request #26 from abtonmoy/master
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m901cd27[m M -> disabled ssim
+* [1;36m|[m [33m20034ae[m Merge pull request #25 from abtonmoy/master
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33me6cf06b[m M -> improved the pipeline with audio and video process parallelized
+[31m|[m * [33m711e5e0[m M ->
+* [32m|[m [33mf5b374e[m Merge pull request #24 from abtonmoy/master
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33mebcfc0e[m M ->  improved clustering using NMS+Kmeans hybrid and added annotated data from the hussain et all dataset
+* [34m|[m [33m86aa2dd[m Merge pull request #23 from abtonmoy/master
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mc7be2a9[m M ->  added audio analysis in addition to video
+* [36m|[m [33m305c76e[m Merge pull request #22 from abtonmoy/master
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m53776fd[m M ->  updated readme
+* [1;32m|[m [33mf480df7[m Merge pull request #21 from abtonmoy/master
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m019baea[m M -> reorganized repo  and updated readme
+* [1;34m|[m [33mf72c986[m Merge pull request #20 from abtonmoy/master
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33ma5731c7[m A -> added dataset download script from hussain, et all
+* [1;36m|[m [33mc1277b8[m Merge pull request #19 from abtonmoy/master
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m3ff1816[m M-> updated readme:  added title for paper
+* [32m|[m [33m7593609[m Merge pull request #18 from abtonmoy/master
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33mfd388b0[m M-> Fixed issues with clustering which now always includes first and last frame for CTA detection, added full pipeline experimentation and updated the readme
+* [34m|[m [33mebcbaaa[m Merge pull request #17 from abtonmoy/master
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33m1ae3b5f[m A -> added extraction part
+* [36m|[m [33m9909b9f[m Merge pull request #16 from abtonmoy/master
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m4d1c19d[m A -> added tests for pipeline
+* [1;32m|[m [33m2bd4023[m Merge pull request #15 from abtonmoy/master
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m3a6295c[m A -> added tests for hierarchical  dedup
+* [1;34m|[m [33mae484df[m Merge pull request #14 from abtonmoy/master
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m3e0615b[m A -> added tests for clip_embed  dedup
+* [1;36m|[m [33m49db8e6[m Merge pull request #13 from abtonmoy/master
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m3ac9905[m A -> added tests for ssim dedup
+* [32m|[m [33m18ea777[m Merge pull request #12 from abtonmoy/master
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m3da74a8[m A -> added tests for phash dedup
+* [34m|[m [33m6365544[m Merge pull request #11 from abtonmoy/master
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mf9b8f2b[m A -> added tests for video_loader and audio_extractor
+* [36m|[m [33m5d8d47f[m Merge pull request #10 from abtonmoy/master
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m50d7c81[m M -> fixed some import error in scene detector and A -> added tests for extract_candidates
+* [1;32m|[m [33mb3ff952[m Merge pull request #9 from abtonmoy/master
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m96253ac[m A -> added some tests for scene_detector and updated gitignore
+* [1;34m|[m [33m80638bd[m Merge pull request #8 from abtonmoy/master
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33m5e562ea[m A -> added change_detector and scene_detector
+[1;35m|[m * [33m10aaa46[m A -> added utils
+* [1;36m|[m [33mc4607f4[m Merge pull request #7 from abtonmoy/master
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m7e9b546[m A -> added dependencies
+* [32m|[m [33m389c649[m Merge pull request #6 from abtonmoy/master
+[33m|[m[32m\[m[32m|[m 
+[33m|[m * [33m03d2caa[m A -> added deduplication pipeline
+* [34m|[m [33m883542b[m Merge pull request #5 from abtonmoy/master
+[35m|[m[34m\[m[34m|[m 
+[35m|[m * [33mb68a0ee[m A -> added ingestion pipeline for viseo and audio
+* [36m|[m [33m032480b[m Merge pull request #4 from abtonmoy/master
+[1;31m|[m[36m\[m[36m|[m 
+[1;31m|[m * [33m06edfa4[m A -> project uv config
+[1;31m|[m * [33m017b239[m A -> project config
+* [1;32m|[m [33m8b160d0[m Merge pull request #3 from abtonmoy/master
+[1;33m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m * [33m2ce029e[m A -> project structure
+* [1;34m|[m [33m135a952[m Merge pull request #2 from abtonmoy/master
+[1;35m|[m[1;34m\[m[1;34m|[m 
+[1;35m|[m * [33mbb43f73[m M-> research description
+* [1;36m|[m [33m67b313a[m Merge pull request #1 from abtonmoy/master
+[31m|[m[1;36m\[m[1;36m|[m 
+[31m|[m * [33m023ef69[m A-> research description
+[31m|[m[31m/[m  
+* [33m1131ca0[m Initial commit

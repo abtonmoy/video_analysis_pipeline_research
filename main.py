@@ -42,9 +42,9 @@ load_dotenv()
 
 # Configuration
 INPUT_DIR = "data/hussain_videos"
-OUTPUT_DIR = "results"
-RESULTS_FILE = "results/new/processing_results.json"
-PROGRESS_FILE = "results/new/progress.json"
+OUTPUT_DIR = "main_results"
+RESULTS_FILE = "main_results/processing_results.json"
+PROGRESS_FILE = "main_results/progress.json"
 CONFIG_PATH = "config/default.yaml"
 VIDEO_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.webm']
 DEFAULT_WORKERS = 4

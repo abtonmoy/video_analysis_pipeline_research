@@ -130,7 +130,7 @@ selection:
   # Smart global frame budget (improvement #10)
   # After NMS, keep only top frames by importance. Uses diminishing returns:
   # short videos get proportionally more frames, long videos are capped.
-  global_max_frames: 25
+  # global_max_frames: 25
 
   # Visual feature detection for importance scoring (improvement #5)
   # Uses OpenCV to detect text regions and faces in frames.
