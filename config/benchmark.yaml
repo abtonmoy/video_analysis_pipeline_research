@@ -45,6 +45,10 @@ benchmark:
     model: "gemini-3-flash-preview"
     max_tokens: 4000
     temperature: 0.0
+    retry:
+      max_retries: 6
+      base_delay: 2.0
+      max_delay: 120.0
 
   # Output settings
   output:
