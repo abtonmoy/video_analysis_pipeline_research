@@ -467,6 +467,31 @@ def print_summary(results_data: Dict[str, Any]):
     console.print(files_panel)
 
 
+def _load_api_keys() -> List[str]:
+    """
+    Load API keys from numbered environment variables.
+    Reads GOOGLE_API_KEY, GOOGLE_API_KEY1, GOOGLE_API_KEY2, ...
+    Falls back to GEMINI_API_KEY variants.
+    """
+    keys = []
+    for base_var in ["GOOGLE_API_KEY", "GEMINI_API_KEY"]:
+        base = os.environ.get(base_var, "").strip()
+        if base:
+            keys.append(base)
+        for i in range(1, 20):
+            k = os.environ.get(f"{base_var}{i}", "").strip()
+            if k:
+                keys.append(k)
+            else:
+                break
+        if keys:
+            break
+
+    # Deduplicate preserving order
+    seen = set()
+    return [k for k in keys if not (k in seen or seen.add(k))]
+
+
 # Module-level worker function for multiprocessing compatibility
 def _worker_process_video(
     video_path: str,
@@ -478,6 +503,7 @@ def _worker_process_video(
     skip_gpu: bool,
     methods: Optional[List[str]],
     output_dir: str,
+    worker_api_key: Optional[str] = None,
 ) -> tuple:
     """Worker function for parallel processing (must be module-level for pickling)."""
     try:
@@ -490,6 +516,14 @@ def _worker_process_video(
             handlers=[logging.FileHandler(str(log_file))],
             force=True,
         )
+
+        # Set this worker's dedicated API key BEFORE any SDK clients are created
+        if worker_api_key:
+            os.environ["GOOGLE_API_KEY"] = worker_api_key
+            os.environ["GEMINI_API_KEY"] = worker_api_key
+            logging.getLogger(__name__).info(
+                f"Worker using API key ...{worker_api_key[-6:]}"
+            )
 
         from benchmarks.runner import BenchmarkRunner
 
@@ -604,6 +638,11 @@ def process_videos_parallel(
         )
 
         try:
+            # Load API keys for round-robin distribution across workers
+            api_keys = _load_api_keys()
+            if api_keys:
+                console.print(f"[info]Distributing {len(api_keys)} API key(s) across workers[/info]")
+
             # Use ProcessPoolExecutor for parallel processing
             # Note: Each worker will initialize its own models
             with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -620,8 +659,9 @@ def process_videos_parallel(
                         args.skip_gpu,
                         args.methods,
                         OUTPUT_DIR,
+                        api_keys[i % len(api_keys)] if api_keys else None,
                     ): vp
-                    for vp in pending_videos
+                    for i, vp in enumerate(pending_videos)
                 }
 
                 console.print(f"[success]Workers initialized! Starting benchmarking...[/success]\n")
