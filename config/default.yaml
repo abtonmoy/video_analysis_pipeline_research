@@ -206,7 +206,7 @@ selection:
 # LLM extraction with audio context
 extraction:
   provider: "gemini"
-  model: "gemini-3-flash-preview"
+  model: "gemini-3-flash-preview" # "gemini-3-flash-preview"
   max_tokens: 4000
   temperature: 0.0
 

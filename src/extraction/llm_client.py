@@ -326,7 +326,7 @@ class GeminiClient(BaseLLMClient):
             import os
 
             api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            genai.configure(api_key=api_key)
+            genai.configure(api_key=api_key, client_options={'api_endpoint': 'generativelanguage.googleapis.com'})
             self._client = genai.GenerativeModel(self.model)
         return self._client
 
@@ -390,7 +390,7 @@ class GeminiVideoClient(BaseLLMClient):
             import os
 
             api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-            genai.configure(api_key=api_key)
+            genai.configure(api_key=api_key, client_options={'api_endpoint': 'generativelanguage.googleapis.com'})
             self._client = genai.GenerativeModel(self.model)
         return self._client
 

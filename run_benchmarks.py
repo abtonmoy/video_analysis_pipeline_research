@@ -473,6 +473,10 @@ def _load_api_keys() -> List[str]:
     Reads GOOGLE_API_KEY, GOOGLE_API_KEY1, GOOGLE_API_KEY2, ...
     Falls back to GEMINI_API_KEY variants.
     """
+    # Ensure .env is loaded
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+
     keys = []
     for base_var in ["GOOGLE_API_KEY", "GEMINI_API_KEY"]:
         base = os.environ.get(base_var, "").strip()
@@ -507,6 +511,10 @@ def _worker_process_video(
 ) -> tuple:
     """Worker function for parallel processing (must be module-level for pickling)."""
     try:
+        # Load .env in worker process (subprocess doesn't inherit dotenv vars)
+        from dotenv import load_dotenv
+        load_dotenv(override=True)
+
         # Setup logging in worker process
         log_file = Path(output_dir) / 'benchmark.log'
         log_file.parent.mkdir(parents=True, exist_ok=True)

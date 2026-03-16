@@ -71,6 +71,13 @@ class KeyRotator:
             ...
         Stops scanning at the first missing number.
         """
+        # Ensure .env is loaded in this process
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(override=True)
+        except ImportError:
+            pass
+
         _, base_vars = PROVIDER_KEY_ENV.get(
             self.provider, (None, [f"{self.provider.upper()}_API_KEY"])
         )

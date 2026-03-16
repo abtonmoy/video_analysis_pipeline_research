@@ -1,0 +1,10 @@
+video,method,selected_count,compression_ratio,latency_s,info_density,vlm_cost_usd,bare_brand_match,bare_promo_detected,bare_cta_detected,bare_topic_match,bare_effectiveness,full_brand_match,full_promo_detected,full_cta_detected,full_topic_match,full_effectiveness,full_error,bare_error
+Gz-sC-vSIXk.mp4,uniform_1fps,40,24.93,0.074,0.15409,0.459,,False,True,,4.0,,False,True,,4.0,,
+Gz-sC-vSIXk.mp4,random,39,25.56,0.0,0.10528,0.4475,,False,True,,4.0,,,,,,429 Resource has been exhausted (e.g. check quota).,
+Gz-sC-vSIXk.mp4,histogram,9,110.78,0.118,0.26278,0.1033,,False,False,,4.0,,False,False,,4.0,,
+Gz-sC-vSIXk.mp4,orb,4,249.25,1.051,0.34902,0.0459,,False,True,,3.0,,,,,,429 Resource has been exhausted (e.g. check quota).,
+Gz-sC-vSIXk.mp4,optical_flow,77,12.95,4.194,0.13034,0.8836,,False,True,,4.0,,,,,,429 Resource has been exhausted (e.g. check quota).,
+Gz-sC-vSIXk.mp4,clip_only,39,25.56,0.092,0.2193,0.4475,,False,True,,4.0,,,,,,429 Resource has been exhausted (e.g. check quota).,
+Gz-sC-vSIXk.mp4,kmeans,13,76.69,0.049,0.23752,0.1492,,,,,,,,,,,429 Resource has been exhausted (e.g. check quota).,429 Resource has been exhausted (e.g. check quota).
+Gz-sC-vSIXk.mp4,hib_pipeline,1,997.0,3.292,0.0,0.0115,,False,False,,2.0,,,,,,429 Resource has been exhausted (e.g. check quota).,
+Gz-sC-vSIXk.mp4,static_pipeline,1,997.0,3.296,0.0,0.0115,,,,,,,,,,,429 Resource has been exhausted (e.g. check quota).,429 Resource has been exhausted (e.g. check quota).
