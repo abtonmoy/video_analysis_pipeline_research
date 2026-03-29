@@ -1,0 +1,21 @@
+%% ===============================================================
+\section{Related Work}
+\label{sec:related_work}
+
+\subsection{Video Frame Selection and Summarization}
+
+Traditional keyframe extraction methods fall into three categories: shot-based~\cite{potapov2014category}, clustering-based~\cite{hanjalic2004unified}, and optimization-based~\cite{das2011video}. Shot detection identifies scene boundaries via color histogram differences~\cite{cernekova2006entropy} or motion analysis~\cite{trivedi2007multi}, then selects representative frames per shot. While efficient, these methods ignore semantic content and struggle with gradual transitions common in advertisements.
+
+Deep learning approaches have improved summarization quality. Zhou et al.~\cite{zhou2018deep} introduced DSNet for diverse video summarization using reinforcement learning. Zhao et al.~\cite{zhao2021video} proposed VSNet with attention mechanisms for highlight detection. However, these methods optimize for human viewing preferences (coverage, diversity, representativeness) rather than machine analysis fidelity. Recent work on task-aware summarization~\cite{rochan2023task} shows promise but lacks theoretical bounds on information preservation.
+
+\subsection{Perceptual Hashing and Similarity Metrics}
+
+Perceptual hashing algorithms (pHash~\cite{zauner2010framework}, dHash~\cite{krawczyk2015phash}, wHash~\cite{wang2019robust}) provide efficient fingerprinting for image deduplication. Learned perceptual metrics (LPIPS~\cite{zhang2018unreasonable}), trained on human judgment data, correlate better with perceived similarity than pixel-wise metrics like SSIM~\cite{wang2004image}. Our cascade uses hashes for speed and LPIPS for perceptual precision.
+
+\subsection{Vision-Language Models for Video Analysis}
+
+VLMs have revolutionized multimodal understanding. GPT-4V~\cite{openai2023gpt4v} demonstrates emergent capabilities in scene understanding. Gemini~\cite{team2023gemini} supports native video input with temporal reasoning. Recent work addresses VLM efficiency through token pruning~\cite{chen2024tokenpacker} and cache reuse~\cite{kwon2023efficient}. However, these methods operate at the model architecture level, orthogonal to our input-level optimization. Our approach complements these by reducing the number of forward passes required.
+
+\subsection{SVD-Based Dimensionality Estimation}
+
+The concept of Intrinsic Dimension via SVD has applications in neural network compression~\cite{denton2014exploiting} and manifold learning~\cite{fefferman2016testing}. Hamiltonian Neural Networks~\cite{greydanus2019hamiltonian} have shown that physics-inspired formulations can provide useful inductive biases. We adapt intrinsic dimension to video semantics, defining ISD as the effective rank of the frame embedding matrix, and combine it with an energy-inspired budget scaling that captures temporal dynamics.

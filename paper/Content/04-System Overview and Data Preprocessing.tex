@@ -1,0 +1,82 @@
+\section{System Overview}
+\label{sec:system_overview}
+
+AdaFrame processes video advertisements through a seven-stage pipeline organized into two parallel tracks that merge before final extraction (Figure~\ref{fig:architecture}).
+
+\subsection{Pipeline Architecture}
+
+\textbf{Stage 1: Video Ingestion.} The input video is loaded and metadata extracted (duration, resolution, FPS, total frame count). Audio is simultaneously extracted to a separate file for parallel processing.
+
+\textbf{Stages 2--4: Visual Pipeline} (runs in parallel with Stage 5).
+
+\begin{itemize}
+    \item \textit{Stage 2: Scene Detection.} Content-aware scene boundaries are detected via adaptive thresholding on inter-frame differences (PySceneDetect~\cite{cernekova2006entropy} with content detector, threshold $= 27.0$). A fallback mechanism activates when fewer than 2 scenes are detected: the threshold is halved, and if still insufficient, the video is split into artificial chunks of 10\,s each. This ensures every video produces a usable scene segmentation regardless of editing style.
+
+    \item \textit{Stage 3: Candidate Frame Extraction.} Within each scene, candidate frames are extracted at 50\,ms intervals using histogram-based change detection (chi-square distance, threshold $= 0.15$). A minimum temporal gap of 100\,ms between candidates prevents over-sampling during rapid motion. This stage reduces a typical 30\,s video from $\sim$900 native frames to $\sim$150 candidates.
+
+    \item \textit{Stage 4: Hierarchical Deduplication.} The three-tier cascade (Section~\ref{sec:cascade}) progressively filters candidates: hash voting eliminates near-duplicates (35\% reduction), LPIPS removes perceptually similar frames (20\% further reduction), and CLIP clustering groups semantically equivalent content (45\% further reduction). Frames surviving all three tiers advance to selection.
+\end{itemize}
+
+\textbf{Stage 5: Audio Pipeline} (runs in parallel with Stages 2--4).
+Audio is processed through four sub-components:
+\begin{itemize}
+    \item \textit{Speech detection}: Voice Activity Detection (VAD) identifies speech segments; if no speech is detected, transcription is skipped entirely to save compute.
+    \item \textit{Transcription}: Whisper-large-v3~\cite{radford2022whisper} produces timestamped speech segments with word-level alignment.
+    \item \textit{Key phrase extraction}: Promotional keywords (``sale'', ``free'', ``limited'', ``call now'') are detected in transcriptions with timestamps, enabling cross-modal alignment.
+    \item \textit{Mood classification}: Audio features (RMS energy, spectral centroid, tempo) are used to classify mood as energetic, upbeat, calm, dramatic, or melancholic.
+\end{itemize}
+
+The audio context is formatted as a structured prompt supplement: transcription segments with timestamps, detected key phrases, and mood classification are appended to the VLM extraction prompt, enabling the model to cross-reference visual and verbal content.
+
+\textbf{Stage 6: Adaptive Selection.} The visual and audio pipelines merge. An importance scorer assigns each surviving candidate a score based on: video position (opening/closing segments boosted 1.4--1.5$\times$), scene boundary proximity (1.2--1.4$\times$), audio event alignment (1.3$\times$ near energy peaks, 1.5$\times$ near key phrases), and visual features (1.3$\times$ for text overlays, 1.2$\times$ for faces). The adaptive budget (Section~\ref{sec:budget}) determines how many frames to keep, and the top-scoring candidates are selected with temporal-aware NMS (Section~\ref{sec:tanms}) ensuring temporal diversity.
+
+\textbf{Stage 7: VLM Extraction.} Selected frames are sent to Gemini-3-Flash with a structured extraction prompt requesting JSON output covering: product category, brand names, promotional offers, call-to-action type, visual elements, target demographic, topic classification (38 categories), sentiment, and engagement metrics. The prompt includes temporal context (frame timestamps, inter-frame deltas, position labels) and the audio context from Stage 5. A two-pass adaptive schema mode first classifies the ad type (product demo, testimonial, brand awareness, tutorial, entertainment), then applies type-specific extraction fields.
+
+\subsection{Data Processing}
+\label{sec:data_processing}
+
+\textbf{Frame Representation.} All frames are resized to a maximum resolution of 720p (preserving aspect ratio) before processing. CLIP ViT-B/32 embeddings (512-dimensional) are computed in batches of 32 on GPU for the deduplication and clustering stages.
+
+\textbf{Parallelization.} Stages 2--4 (visual) and Stage 5 (audio) execute concurrently via a thread pool. For batch processing of multiple videos, a process-level parallel pipeline distributes videos across workers, with each worker running the full seven-stage pipeline independently. Configuration, model weights (CLIP, Whisper), and VLM client connections are initialized once per worker.
+
+\textbf{Output Format.} Each processed video produces a structured JSON result containing: video metadata (duration, FPS, resolution), scene boundaries, selected frame timestamps with importance scores, per-tier deduplication statistics (frame counts after hash/LPIPS/CLIP), audio context summary, and the full VLM extraction output. Batch results are saved incrementally with resume support---interrupted runs can be continued without reprocessing completed videos.
+
+\textbf{Worked Example.} Table~\ref{tab:example} traces a representative 30-second gaming advertisement through the full pipeline, illustrating the progressive frame reduction at each stage and the final structured extraction.
+
+\begin{table}[t]
+\centering
+\caption{End-to-end processing example for a 30-second gaming advertisement (``Sword of Chaos'', 30\,FPS, 981 total frames).}
+\label{tab:example}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{@{}lrl@{}}
+\toprule
+\textbf{Stage} & \textbf{Frames} & \textbf{Notes} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Input}} \\
+\quad Native video       & 981  & 30\,FPS $\times$ 32.7\,s \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Visual Pipeline}} \\
+\quad Scene detection    & ---  & 8 scenes detected \\
+\quad Candidate extraction & 448 & Histogram change detection at 50\,ms \\
+\quad After pHash        & 312  & 30.4\% removed (near-duplicates) \\
+\quad After LPIPS        & 245  & 21.5\% removed (perceptual similarity) \\
+\quad After CLIP         & 27   & 88.9\% removed (semantic clustering) \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Audio Pipeline (parallel)}} \\
+\quad Speech segments    & ---  & 3 segments, 12.4\,s total speech \\
+\quad Key phrases        & ---  & None detected \\
+\quad Mood               & ---  & Energetic \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Selection}} \\
+\quad ISD ($k^*$, $\tau{=}0.90$) & --- & $k^* = 43$, budget $= 24$ \\
+\quad Final selected     & 24   & Top-scored with TA-NMS \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Compression}} \\
+\quad Ratio              & \multicolumn{2}{l}{$981 / 24 = 40.9\times$} \\
+\quad VLM cost           & \multicolumn{2}{l}{\$0.28 (vs.\ \$0.38 for Uniform-1FPS)} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+The VLM extraction for this video returns structured JSON including: \texttt{brand}: ``Sword of Chaos'' (high confidence, logo at 28.2\,s); \texttt{product}: Gaming / Games and toys; \texttt{topic\_id}: 21 (Games and toys, matching ground truth); \texttt{sentiment}: Active; \texttt{effectiveness}: 4/5; \texttt{is\_nsfw}: true; \texttt{target\_audience}: 18--35, interests: anime, action games, fantasy. The audio context contributes mood classification (energetic) but no promotional keywords, consistent with an entertainment-style game trailer.

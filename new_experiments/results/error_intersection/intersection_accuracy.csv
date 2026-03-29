@@ -1,0 +1,10 @@
+Method,Intersection_N,Valid_With_GT,Correct,Total,Intersection_Accuracy,Full_Accuracy
+uniform_1fps,177,177,144,177,81.4,82.9
+random,177,177,145,177,81.9,84.1
+histogram,177,177,140,177,79.1,80.2
+orb,177,177,143,177,80.8,83.9
+optical_flow,177,177,143,177,80.8,82.2
+clip_only,177,177,145,177,81.9,82.3
+kmeans,177,177,146,177,82.5,83.1
+hib_pipeline,177,177,144,177,81.4,82.3
+static_pipeline,177,177,143,177,80.8,81.4

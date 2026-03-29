@@ -1,0 +1,26 @@
+%% ===============================================================
+\section{Introduction}
+\label{sec:introduction}
+
+The proliferation of video advertising has created an unprecedented demand for automated content analysis. Brands need to extract structured metadata---product categories, brand mentions, emotional tone, call-to-action elements---from millions of hours of ad content for competitive intelligence, compliance monitoring, and creative optimization. Vision-Language Models (VLMs) such as GPT-4V, Gemini, and Claude have demonstrated remarkable capability in this task, achieving near-human accuracy in identifying subtle brand placements and contextual nuances~\cite{liu2023visual, team2023gemini}.
+
+However, VLM inference remains prohibitively expensive at scale. Processing a 30-second advertisement at 30 FPS requires analyzing 900 frames; even with aggressive subsampling, costs accumulate rapidly across large corpora. Current approaches employ uniform frame sampling (e.g., 1 FPS or every $k$-th frame), which suffers from two fundamental limitations: (1) \textit{redundancy}---static scenes or slow pans generate near-identical frames that waste inference budget, and (2) \textit{blindness}---fixed intervals may miss rapid cuts containing critical brand reveals or product demonstrations.
+
+Recent work on keyframe extraction~\cite{potapov2014category, singh2022temporal} and video summarization~\cite{zhou2018deep, zhao2021video} addresses redundancy but focuses on human consumption rather than machine analysis. These methods optimize for visual appeal or narrative coherence, not information preservation for downstream VLM tasks. Moreover, they lack principled methods for determining \textit{how many} frames suffice for a given video's semantic complexity.
+
+We propose a \textbf{three-tier hierarchical deduplication cascade} that progressively filters redundant frames with increasing computational cost and finer semantic granularity:
+\begin{enumerate}
+    \item \textbf{Hash Voting}: Ultra-fast perceptual hashes (pHash, dHash, wHash) eliminate exact/near-duplicate frames with $O(1)$ comparison cost.
+    \item \textbf{Perceptual Similarity}: LPIPS metrics capture perceptual similarity missed by hashes, handling lighting changes and minor transformations.
+    \item \textbf{Semantic Clustering}: CLIP embeddings group semantically equivalent frames, with temporal-aware Non-Maximum Suppression ensuring coverage across the video timeline.
+\end{enumerate}
+
+Frame budgets are determined adaptively via \textbf{Intrinsic Semantic Dimensionality (ISD)}, computed through SVD of frame embeddings, combined with a \textbf{Semantic Energy} measure that captures both temporal change rate and spatial information density. This formulation, inspired by Hamiltonian mechanics, provides an interpretable and implemented budget allocation algorithm rather than a fixed heuristic.
+
+Our contributions are:
+\begin{itemize}
+    \item \textbf{Hierarchical Deduplication Cascade}: A three-tier architecture (hash voting $\rightarrow$ LPIPS $\rightarrow$ CLIP clustering) that reduces VLM input frames by 50\% compared to uniform sampling, with temporal-aware NMS ensuring semantic coverage across the video timeline.
+    \item \textbf{Comprehensive Benchmark}: Evaluation of 8 frame selection methods on 484 videos showing the cascade halves frame count and cost vs.\ Uniform-1FPS \textit{with no statistically significant accuracy loss} (McNemar's $p > 0.05$; 93.7\% pairwise topic agreement).
+    \item \textbf{Ablation via Baseline Decomposition}: The main comparison table doubles as an ablation: K-Means $\rightarrow$ CLIP Only $\rightarrow$ full cascade traces each tier's contribution to accuracy (+2.8pp from temporal selection) and efficiency (40\% CLIP compute reduction from pre-filtering).
+    \item \textbf{Adaptive Budget Estimation}: An SVD-based ISD measure, combined with Semantic Energy scaling, that determines per-video frame budgets based on semantic complexity. Validated on 419 videos ($r = 0.82$ between true ISD and operational proxy).
+\end{itemize}

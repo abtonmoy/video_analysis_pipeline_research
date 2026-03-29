@@ -1,0 +1,68 @@
+{
+  "n_videos": 500,
+  "category_statistics": {
+    "low_motion": {
+      "n_videos": 77,
+      "mean_isd": 17.68831168831169,
+      "std_isd": 9.585158127158087,
+      "median_isd": 16.0,
+      "isd_range": [
+        3,
+        41
+      ],
+      "mean_cut_freq": 0.09866866190412649,
+      "mean_duration": 53.04818735636219
+    },
+    "medium_motion": {
+      "n_videos": 223,
+      "mean_isd": 21.77578475336323,
+      "std_isd": 10.678932117054934,
+      "median_isd": 19.0,
+      "isd_range": [
+        4,
+        67
+      ],
+      "mean_cut_freq": 0.3414520058267239,
+      "mean_duration": 53.10157710428316
+    },
+    "high_motion": {
+      "n_videos": 200,
+      "mean_isd": 27.34,
+      "std_isd": 11.605509002020545,
+      "median_isd": 25.5,
+      "isd_range": [
+        7,
+        61
+      ],
+      "mean_cut_freq": 0.6331829625969995,
+      "mean_duration": 45.76990760509445
+    }
+  },
+  "adaptivity_ratio": 1.5456534508076358,
+  "interpretation": {
+    "low_motion": "Static/rotating products, single-scene testimonials",
+    "medium_motion": "Dialogue with moderate scene changes",
+    "high_motion": "Rapid cuts, action sequences, dynamic content"
+  },
+  "examples": {
+    "low_motion": {
+      "video_name": "5JuVHCJVYf4.mp4",
+      "isd": 16,
+      "cut_frequency": 0.16666666666666666,
+      "ad_type": "brand_awareness"
+    },
+    "medium_motion": {
+      "video_name": "-usbQDfTIqE.mp4",
+      "isd": 19,
+      "cut_frequency": 0.4316069057104914,
+      "ad_type": "entertainment"
+    },
+    "high_motion": {
+      "video_name": "1j6YA03hm4k.mp4",
+      "isd": 26,
+      "cut_frequency": 0.7248272232499362,
+      "ad_type": "brand_awareness"
+    }
+  },
+  "key_finding": "Budget adapts 1.5x between low and high motion content"
+}

@@ -42,7 +42,7 @@ benchmark:
   # Comment out to inherit from config/default.yaml
   extraction:
     provider: "gemini"
-    model: "gemini-2.5-flash" # "gemini-3-flash-preview"
+    model: "gemini-3-flash-preview" # "gemini-3-flash-preview"
     max_tokens: 4000
     temperature: 0.0
     throttle_seconds: 6.0

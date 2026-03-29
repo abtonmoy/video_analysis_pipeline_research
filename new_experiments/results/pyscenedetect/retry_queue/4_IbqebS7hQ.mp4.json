@@ -1,0 +1,9 @@
+{
+  "video_id": "4_IbqebS7hQ.mp4",
+  "provider": "gemini",
+  "model": "gemini-2.5-flash",
+  "error_code": "Exception",
+  "error_message": "VLM Error: JSON parse error",
+  "timestamp": "2026-03-25T00:02:38.399158+00:00",
+  "attempt": 2
+}

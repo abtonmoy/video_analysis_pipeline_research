@@ -1,0 +1,6 @@
+DSNet experiment failed at 2026-03-24T16:06:19.564515+00:00
+Error: DSNet repo not found at /home/wabashcs/abt/video_analysis_pipeline_research-main/new_experiments/dsnet_repo
+
+DSNet requires architecture-specific pretrained weights and
+feature extraction (GoogLeNet features in HDF5 format).
+This dependency chain is not easily reproducible.

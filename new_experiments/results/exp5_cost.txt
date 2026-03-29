@@ -1,0 +1,44 @@
+Loading pipeline results...
+Total videos: 1704
+
+Processed 500 valid videos
+
+======================================================================
+COST BREAKDOWN SUMMARY
+======================================================================
+Videos analyzed: 500
+
+Cascade overhead:
+  Mean latency:     118.1s
+  Mean cost:        $0.0164
+
+VLM costs:
+  AdaFrame mean:    $0.2827
+  Uniform mean:     $0.5728
+
+Total cost per video:
+  AdaFrame (cascade + VLM): $0.2991
+  Uniform (VLM only):       $0.5728
+
+Net savings:
+  Mean saving per video:   $0.2737
+  Videos with savings:     470/500 (94%)
+  Breakeven duration:      ~2.8s
+
+Results saved to:
+  new_experiments/results/cost_breakdown/cost_analysis.csv
+  new_experiments/results/cost_breakdown/cost_summary.json
+
+============================================================
+PAPER TEXT (for %%PLACEHOLDER in §6.2):
+============================================================
+
+The cascade itself incurs compute cost (mean 118.1 seconds per
+video, approximately \$0.0164 at RTX~4090 cloud rates of
+\$0.50/hr). However, the VLM cost reduction---from \$0.57
+(Uniform-1FPS) to \$0.28 (AdaFrame)---more than offsets
+this overhead. Net savings are positive for 94\% of videos
+(those longer than $\approx$3 seconds). At production scale
+(1M~videos/month), the total cost reduction is
+\$273670/month.
+

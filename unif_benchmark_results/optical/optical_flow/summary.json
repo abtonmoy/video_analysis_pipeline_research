@@ -1,0 +1,32 @@
+{
+  "frames": {
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "min": 0,
+    "max": 0
+  },
+  "cost_usd": {
+    "mean": 0.0,
+    "median": 0.0,
+    "total": 0.0
+  },
+  "latency_s": {
+    "mean": 0.0,
+    "median": 0.0
+  },
+  "efficiency": {
+    "mean_compression_ratio": 0.0,
+    "mean_info_density": 0.0
+  },
+  "accuracy": {
+    "topic_accuracy": 74.0,
+    "super_category_accuracy": 0.0,
+    "brand_detection_rate": 73.2,
+    "cta_detection_rate": 75.6
+  },
+  "method": "optical_flow",
+  "n_videos": 500,
+  "n_success": 500,
+  "n_failed": 0
+}

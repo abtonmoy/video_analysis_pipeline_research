@@ -1,0 +1,57 @@
+{
+  "n_videos": 10,
+  "strategies": {
+    "A": {
+      "mean_frames": 23.8,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "B": {
+      "mean_frames": 9.6,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "C": {
+      "mean_frames": 10.4,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "D": {
+      "mean_frames": 25.0,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "E": {
+      "mean_frames": 24.4,
+      "topic_accuracy": 100.0,
+      "n": 8
+    }
+  },
+  "multiplier_sensitivity": {
+    "0.5": {
+      "mean_frames": 22.2,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "1.0": {
+      "mean_frames": 23.1,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "1.5": {
+      "mean_frames": 23.8,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "2.0": {
+      "mean_frames": 24.1,
+      "topic_accuracy": 100.0,
+      "n": 8
+    },
+    "3.0": {
+      "mean_frames": 24.4,
+      "topic_accuracy": 100.0,
+      "n": 8
+    }
+  }
+}

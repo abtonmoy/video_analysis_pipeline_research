@@ -1,0 +1,6 @@
+DSNet experiment failed at 2026-03-24T21:20:00.526004+00:00
+Error: call_vlm_with_retry_queue() got an unexpected keyword argument 'video_name'
+
+DSNet requires architecture-specific pretrained weights and
+feature extraction (GoogLeNet features in HDF5 format).
+This dependency chain is not easily reproducible.

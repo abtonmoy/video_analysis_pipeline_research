@@ -1,0 +1,9 @@
+{
+  "video_id": "-HWd3Nqu8_0.mp4",
+  "provider": "gemini",
+  "model": "gemini-3.0-flash-exp",
+  "error_code": "Exception",
+  "error_message": "VLM Error: 404 models/gemini-3.0-flash-exp is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+  "timestamp": "2026-03-25T00:07:56.047508+00:00",
+  "attempt": 2
+}

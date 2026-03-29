@@ -1,0 +1,63 @@
+{
+  "n_videos": 500,
+  "strategy_statistics": {
+    "full_adaptive": {
+      "mean": 25.834,
+      "median": 21.0,
+      "std": 16.888721141744487,
+      "min": 5,
+      "max": 105,
+      "range": 100,
+      "q25": 13.0,
+      "q75": 36.0
+    },
+    "isd_only": {
+      "mean": 56.344,
+      "median": 49.5,
+      "std": 30.103123760172142,
+      "min": 9,
+      "max": 182,
+      "range": 173,
+      "q25": 33.0,
+      "q75": 77.0
+    },
+    "energy_only": {
+      "mean": 25.834,
+      "median": 21.0,
+      "std": 16.888721141744487,
+      "min": 5,
+      "max": 105,
+      "range": 100,
+      "q25": 13.0,
+      "q75": 36.0
+    },
+    "fixed_25": {
+      "mean": 25.0,
+      "median": 25.0,
+      "std": 0.0,
+      "min": 25,
+      "max": 25,
+      "range": 0,
+      "q25": 25.0,
+      "q75": 25.0
+    },
+    "linear_duration": {
+      "mean": 24.708,
+      "median": 20.5,
+      "std": 13.44813893747992,
+      "min": 5,
+      "max": 60,
+      "range": 55,
+      "q25": 15.0,
+      "q75": 31.25
+    }
+  },
+  "key_findings": {
+    "full_adaptive_range": 100,
+    "isd_only_range": 173,
+    "fixed_range": 0,
+    "advantage": "Full adaptive has 100 range vs fixed has 0 (no variation)",
+    "interpretation": "Full formula adapts to content; ISD-only over-budgets complex videos; Fixed ignores complexity"
+  },
+  "recommendation": "Full AdaFrame provides optimal balance of adaptivity and constraint"
+}

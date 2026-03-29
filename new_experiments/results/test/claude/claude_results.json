@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "experiment": "exp6_claude",
+    "timestamp": "2026-03-24T16:04:26.083955+00:00",
+    "total_videos": 5,
+    "succeeded": 5,
+    "failed": 0
+  },
+  "results": [
+    {
+      "status": "success",
+      "video_name": "-1yXdOufzKE.mp4",
+      "duration": 29.996633333333335,
+      "n_frames": 9,
+      "latency_s": 0.2,
+      "extraction": {
+        "error": "\"Could not resolve authentication method. Expected either api_key or auth_token to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted\"",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-5X2kzIDroA.mp4",
+      "duration": 60.10170833333333,
+      "n_frames": 41,
+      "latency_s": 0.03,
+      "extraction": {
+        "error": "\"Could not resolve authentication method. Expected either api_key or auth_token to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted\"",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-5zYYZpuTbU.mp4",
+      "duration": 32.7,
+      "n_frames": 24,
+      "latency_s": 0.01,
+      "extraction": {
+        "error": "\"Could not resolve authentication method. Expected either api_key or auth_token to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted\"",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-DFuMqROFCQ.mp4",
+      "duration": 32.89953333333333,
+      "n_frames": 10,
+      "latency_s": 0.0,
+      "extraction": {
+        "error": "\"Could not resolve authentication method. Expected either api_key or auth_token to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted\"",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-GXvYexMoZY.mp4",
+      "duration": 90.25683333333333,
+      "n_frames": 81,
+      "latency_s": 0.05,
+      "extraction": {
+        "error": "\"Could not resolve authentication method. Expected either api_key or auth_token to be set. Or for one of the `X-Api-Key` or `Authorization` headers to be explicitly omitted\"",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-03-23T21:16:42.447581",
+  "n_videos": 21,
+  "frame_based": {
+    "n_valid": 21,
+    "n_errors": 0,
+    "topic_accuracy": null,
+    "mean_cost": 0.00218,
+    "mean_latency": 11.99
+  },
+  "native_video": {
+    "n_valid": 21,
+    "n_errors": 0,
+    "topic_accuracy": null,
+    "mean_cost": 0.01469,
+    "mean_latency": 39.99
+  }
+}

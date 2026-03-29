@@ -1,0 +1,9 @@
+{
+  "video_id": "-DFuMqROFCQ.mp4",
+  "provider": "gemini",
+  "model": "gemini-2.0-flash",
+  "error_code": "NotFound",
+  "error_message": "404 This model models/gemini-2.0-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements.",
+  "timestamp": "2026-03-24T15:02:41.006145+00:00",
+  "attempt": 2
+}

@@ -1,0 +1,48 @@
+# Unified Benchmarks Configuration
+
+# VLM Provider settings (must be under 'extraction' key)
+extraction:
+  provider: "gemini"
+  model: "gemini-2.5-flash"
+  max_tokens: 4000
+  temperature: 0.0
+
+# Throttling between LLM calls (seconds)
+throttle_seconds: 4.0
+
+# Video processing settings
+sample_interval_ms: 100  # Decode frames every N ms
+max_resolution: 720      # Resize if larger
+
+# Cost per frame (USD)
+cost_per_frame_usd: 0.015
+
+# Method-specific thresholds
+thresholds:
+  histogram_correlation: 0.95
+  orb_good_matches: 40
+  orb_match_distance: 50
+  optical_flow_percentile: 85
+  clip_cosine: 0.92
+  kmeans_seconds_per_cluster: 3
+
+# CLIP settings
+clip:
+  model: "ViT-B-32"
+  pretrained: "openai"
+  threshold: 0.90
+  device: "auto"
+  batch_size: 32
+
+# Retry settings
+retry:
+  max_immediate_retries: 2
+  retry_delay: 5.0
+  max_queue_attempts: 3
+
+# Output settings
+output:
+  save_per_video_json: true
+  save_csv: true
+  save_figures: true
+  figure_dpi: 300

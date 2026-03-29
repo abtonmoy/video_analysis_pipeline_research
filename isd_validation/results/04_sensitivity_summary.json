@@ -1,0 +1,86 @@
+{
+  "n_videos": 500,
+  "baseline_tau": 0.9,
+  "statistics_by_tau": {
+    "0.8": {
+      "mean": 13.182,
+      "median": 12.0,
+      "std": 6.364029855366802,
+      "min": 2,
+      "max": 37,
+      "range": 35,
+      "q25": 8.0,
+      "q75": 17.0
+    },
+    "0.85": {
+      "mean": 17.102,
+      "median": 16.0,
+      "std": 8.345273872078735,
+      "min": 3,
+      "max": 48,
+      "range": 45,
+      "q25": 11.0,
+      "q75": 23.0
+    },
+    "0.9": {
+      "mean": 23.372,
+      "median": 21.5,
+      "std": 11.42863141412829,
+      "min": 3,
+      "max": 67,
+      "range": 64,
+      "q25": 14.0,
+      "q75": 31.0
+    },
+    "0.95": {
+      "mean": 35.644,
+      "median": 32.0,
+      "std": 17.20712829033363,
+      "min": 4,
+      "max": 102,
+      "range": 98,
+      "q25": 22.0,
+      "q75": 48.0
+    },
+    "0.99": {
+      "mean": 63.756,
+      "median": 54.0,
+      "std": 30.96024005074896,
+      "min": 4,
+      "max": 172,
+      "range": 168,
+      "q25": 41.0,
+      "q75": 89.0
+    }
+  },
+  "differences_from_baseline": {
+    "0.8": {
+      "mean_diff": -10.19,
+      "max_diff": 31,
+      "direction": "lower"
+    },
+    "0.85": {
+      "mean_diff": -6.27,
+      "max_diff": 19,
+      "direction": "lower"
+    },
+    "0.95": {
+      "mean_diff": 12.272,
+      "max_diff": 35,
+      "direction": "higher"
+    },
+    "0.99": {
+      "mean_diff": 40.384,
+      "max_diff": 105,
+      "direction": "higher"
+    }
+  },
+  "interpretation": {
+    "0.80": "Captures less variance, lower ISD, may miss subtle changes",
+    "0.85": "Moderate threshold, slightly conservative",
+    "0.90": "Balanced - captures most semantic variation without over-budgeting",
+    "0.95": "Higher threshold, more frames, diminishing returns",
+    "0.99": "Very high threshold, over-budgets for marginal gains"
+  },
+  "recommendation": "tau=0.90 provides optimal balance of coverage and efficiency"
+}

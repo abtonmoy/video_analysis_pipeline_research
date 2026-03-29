@@ -1,0 +1,9 @@
+% === Task 2: True ISD Validation (auto-generated) ===
+\paragraph{SVD-Based ISD Validation.}
+To validate the theoretical framework of Section~4, we computed the true Intrinsic Semantic Dimensionality ($k^*$) for a random subset of $N=419$ videos from the benchmark set. For each video, we extracted all candidate frames at 100\,ms intervals, computed ViT-B/32 CLIP embeddings for the full candidate set, and determined $k^*$ via SVD with $\tau=0.95$ (Eq.~4).
+
+The true ISD shows a strong correlation with the pipeline's \texttt{frames\_after\_clip} proxy (Pearson $r=0.816$, Spearman $\rho=0.819$, $p<1.0e-10$, $N=419$).
+The correlation between $k^*$ and overall compression ratio is $r=-0.218$ ($p=6.96e-06$, $N=419$).
+A point-biserial correlation between $k^*$ and per-video topic classification accuracy (against Pitt Ads~\cite{hussain2017automatic} ground truth) yields $r_{pb}=-0.012$ ($p=8.16e-01$, $N=392$).
+Across the sample, $k^*$ ranged from 3 to 131 (mean$=51.8$, median$=48.0$), confirming substantial variation in semantic complexity across advertisement videos.
+This validates that the proxy metric used in the pipeline closely tracks the theoretically motivated $k^*$, supporting the ISD-based budget allocation described in Section~4.

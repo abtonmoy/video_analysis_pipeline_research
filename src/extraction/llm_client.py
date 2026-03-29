@@ -14,6 +14,7 @@ Features:
 import re
 import json
 import time
+import random
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from abc import ABC, abstractmethod
@@ -33,14 +34,64 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# Gemini safety settings — BLOCK_NONE to prevent false positives on ad content
+# (alcohol, gambling, beauty products routinely trigger overzealous filters)
+# ---------------------------------------------------------------------------
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", FutureWarning)
+    try:
+        from google.generativeai.types import HarmCategory, HarmBlockThreshold
+        GEMINI_SAFETY_PERMISSIVE = {
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        }
+    except ImportError:
+        GEMINI_SAFETY_PERMISSIVE = None
+
+
+# ============================================================================
 # Retry Utility
 # ============================================================================
+
+def _get_retryable_exceptions() -> tuple:
+    """
+    Build a tuple of exception types that should trigger automatic retry.
+    SDK imports are guarded so missing provider packages don't break anything.
+    """
+    retryable = [ConnectionError, TimeoutError, OSError]
+    try:
+        from google.api_core.exceptions import (
+            ResourceExhausted,
+            ServiceUnavailable,
+            TooManyRequests,
+            InternalServerError as GoogleInternalError,
+        )
+        retryable.extend([ResourceExhausted, ServiceUnavailable,
+                          TooManyRequests, GoogleInternalError])
+    except ImportError:
+        pass
+    try:
+        from anthropic import RateLimitError as AnthropicRateLimit
+        from anthropic import InternalServerError as AnthropicInternalError
+        retryable.extend([AnthropicRateLimit, AnthropicInternalError])
+    except ImportError:
+        pass
+    try:
+        from openai import RateLimitError as OpenAIRateLimit
+        retryable.extend([OpenAIRateLimit])
+    except ImportError:
+        pass
+    return tuple(retryable)
+
 
 def _retry_with_backoff(
     func,
     max_retries: int = 3,
     base_delay: float = 1.0,
-    max_delay: float = 30.0,
+    max_delay: float = 60.0,
     retryable_exceptions: tuple = None,
 ):
     """
@@ -51,7 +102,8 @@ def _retry_with_backoff(
         max_retries: Number of retry attempts
         base_delay: Initial delay in seconds
         max_delay: Maximum delay cap
-        retryable_exceptions: Tuple of exception types to retry on
+        retryable_exceptions: Tuple of exception types to retry on.
+            If None, auto-detects from installed provider SDKs.
 
     Returns:
         Function result
@@ -60,11 +112,7 @@ def _retry_with_backoff(
         Last exception if all retries exhausted
     """
     if retryable_exceptions is None:
-        retryable_exceptions = (
-            ConnectionError,
-            TimeoutError,
-            OSError,
-        )
+        retryable_exceptions = _get_retryable_exceptions()
 
     last_exception = None
 
@@ -75,15 +123,19 @@ def _retry_with_backoff(
             last_exception = e
             if attempt < max_retries:
                 delay = min(base_delay * (2 ** attempt), max_delay)
+                jitter = random.uniform(0, delay * 0.25)
+                actual_delay = delay + jitter
+                status_code = getattr(e, "status_code", None) or getattr(e, "code", None)
                 logger.warning(
-                    f"Retry {attempt + 1}/{max_retries} after {type(e).__name__}: {e}. "
-                    f"Waiting {delay:.1f}s..."
+                    f"Retry {attempt + 1}/{max_retries} after {type(e).__name__} "
+                    f"(status={status_code}): {e}. "
+                    f"Waiting {actual_delay:.1f}s..."
                 )
-                time.sleep(delay)
+                time.sleep(actual_delay)
             else:
                 logger.error(f"All {max_retries} retries exhausted: {e}")
         except Exception as e:
-            # Check for HTTP status code errors (rate limit, server error)
+            # Fallback: inspect error string for retryable patterns not caught by type
             error_str = str(e).lower()
             status_code = getattr(e, "status_code", None) or getattr(e, "code", None)
 
@@ -91,6 +143,8 @@ def _retry_with_backoff(
                 status_code in (429, 500, 502, 503, 504)
                 or "rate limit" in error_str
                 or "too many requests" in error_str
+                or "resource_exhausted" in error_str
+                or "unavailable" in error_str
                 or "server error" in error_str
                 or "overloaded" in error_str
                 or "timeout" in error_str
@@ -99,11 +153,14 @@ def _retry_with_backoff(
             if is_retryable and attempt < max_retries:
                 last_exception = e
                 delay = min(base_delay * (2 ** attempt), max_delay)
+                jitter = random.uniform(0, delay * 0.25)
+                actual_delay = delay + jitter
                 logger.warning(
-                    f"Retry {attempt + 1}/{max_retries} after {type(e).__name__}: {e}. "
-                    f"Waiting {delay:.1f}s..."
+                    f"Retry {attempt + 1}/{max_retries} after {type(e).__name__} "
+                    f"(status={status_code}): {e}. "
+                    f"Waiting {actual_delay:.1f}s..."
                 )
-                time.sleep(delay)
+                time.sleep(actual_delay)
             else:
                 raise
 
@@ -113,6 +170,151 @@ def _retry_with_backoff(
 # ============================================================================
 # JSON Parsing
 # ============================================================================
+
+def _repair_truncated_json(text: str) -> str:
+    """
+    Attempt to repair truncated JSON by closing open structures.
+
+    When an LLM hits max_output_tokens, the response ends mid-JSON.
+    This function tracks open braces/brackets with a character-level stack
+    and appends the necessary closing characters.
+
+    Args:
+        text: Potentially truncated JSON string (should already be
+              extracted from markdown / surrounding text by the caller)
+
+    Returns:
+        Repaired JSON string with all structures closed.
+        The result may have missing fields — that's intentional.
+        The existing compute_confidence() function will score it low.
+    """
+    # Track parser state through the string
+    in_string = False
+    escape_next = False
+    stack = []
+
+    for char in text:
+        if escape_next:
+            escape_next = False
+            continue
+        if char == '\\' and in_string:
+            escape_next = True
+            continue
+        if char == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        # Outside of string literals: track structure nesting
+        if char in ('{', '['):
+            stack.append(char)
+        elif char == '}' and stack and stack[-1] == '{':
+            stack.pop()
+        elif char == ']' and stack and stack[-1] == '[':
+            stack.pop()
+
+    # Nothing to repair — JSON is already balanced
+    if not stack and not in_string:
+        return text
+
+    repaired = text.rstrip().rstrip(',')
+
+    # Close an open string literal (truncated mid-value)
+    if in_string:
+        repaired += '"'
+
+    # Remove trailing incomplete key-value pairs that would cause parse errors
+    # Examples: '..."some_key": ' or '..."some_key": "partial'
+    repaired = re.sub(r',\s*"[^"]*"\s*:\s*$', '', repaired)
+    repaired = re.sub(r',\s*$', '', repaired)
+
+    # Close all open brackets/braces in reverse (innermost first)
+    for opener in reversed(stack):
+        if opener == '{':
+            repaired += '}'
+        elif opener == '[':
+            repaired += ']'
+
+    return repaired
+
+
+def _extract_gemini_response(response) -> str:
+    """
+    Safely extract text from a Gemini GenerateContentResponse.
+
+    Handles three failure modes:
+    1. Empty candidates list (safety block before generation started)
+    2. finish_reason == SAFETY (blocked during or after generation)
+    3. finish_reason == MAX_TOKENS (truncated — logged but text still returned
+       so the downstream JSON repair can attempt recovery)
+
+    Returns:
+        Response text string. On safety blocks, returns a valid JSON error
+        string like '{"error": "SAFETY_BLOCKED", ...}'. This flows through
+        _parse_json_response() normally, and AdExtractor.extract() sees the
+        "error" key in the parsed dict.
+    """
+    # Case 1: No candidates at all
+    if not response.candidates:
+        logger.warning("Gemini returned no candidates (likely safety-blocked)")
+        return json.dumps({
+            "error": "SAFETY_BLOCKED",
+            "detail": "No candidates returned by Gemini",
+        })
+
+    candidate = response.candidates[0]
+
+    # Normalize finish_reason to a string (SDK uses enum types)
+    finish_reason = getattr(candidate, "finish_reason", None)
+    if hasattr(finish_reason, "name"):
+        finish_reason = finish_reason.name
+    # Some SDK versions use integer enum values
+    if isinstance(finish_reason, int):
+        _FINISH_REASON_MAP = {
+            0: "UNSPECIFIED", 1: "STOP", 2: "MAX_TOKENS",
+            3: "SAFETY", 4: "RECITATION", 5: "OTHER",
+        }
+        finish_reason = _FINISH_REASON_MAP.get(finish_reason, str(finish_reason))
+
+    # Case 2: Safety blocked
+    if finish_reason == "SAFETY":
+        safety_ratings = getattr(candidate, "safety_ratings", [])
+        detail_parts = []
+        for r in safety_ratings:
+            cat = getattr(r.category, "name", str(r.category)) if hasattr(r, "category") else "?"
+            prob = getattr(r.probability, "name", str(r.probability)) if hasattr(r, "probability") else "?"
+            detail_parts.append(f"{cat}={prob}")
+        detail = ", ".join(detail_parts) if detail_parts else "unknown"
+        logger.warning(f"Gemini response safety-blocked: {detail}")
+        return json.dumps({
+            "error": "SAFETY_BLOCKED",
+            "finish_reason": "SAFETY",
+            "detail": detail,
+        })
+
+    # Case 3: Max tokens (truncated) — log but still return text for JSON repair
+    if finish_reason == "MAX_TOKENS":
+        logger.warning(
+            "Gemini response truncated (finish_reason=MAX_TOKENS). "
+            "JSON repair will be attempted by _parse_json_response()."
+        )
+
+    # Normal text extraction
+    try:
+        return response.text
+    except (ValueError, AttributeError):
+        # Some SDK versions raise ValueError when .text is accessed on empty parts
+        try:
+            if candidate.content and candidate.content.parts:
+                return candidate.content.parts[0].text
+        except (AttributeError, IndexError):
+            pass
+        logger.error(f"Could not extract text from Gemini response (finish_reason={finish_reason})")
+        return json.dumps({
+            "error": "EMPTY_RESPONSE",
+            "finish_reason": str(finish_reason),
+        })
+
 
 def _parse_json_response(response: str) -> Dict[str, Any]:
     """
@@ -165,6 +367,36 @@ def _parse_json_response(response: str) -> Dict[str, Any]:
             except json.JSONDecodeError:
                 pass
 
+            # Attempt 5: Stack-based truncation repair
+            # Handles the case where max_output_tokens cut the response mid-JSON
+            try:
+                repaired = _repair_truncated_json(fixed)
+                result = json.loads(repaired)
+                logger.warning(
+                    "JSON truncation repaired via autoclose. "
+                    "Output may be incomplete — consider increasing max_output_tokens."
+                )
+                return result
+            except (json.JSONDecodeError, Exception):
+                pass
+
+    # Attempt 3b: The response may be truncated so severely that there is
+    # no closing brace at all (the greedy regex \{.*\} above requires both
+    # braces). Try from the first opening brace to end-of-string.
+    first_brace = text.find('{')
+    if first_brace >= 0:
+        partial = text[first_brace:]
+        try:
+            repaired = _repair_truncated_json(partial)
+            fixed = re.sub(r",\s*([}\]])", r"\1", repaired)
+            result = json.loads(fixed)
+            logger.warning(
+                "JSON truncation repaired from partial response (no closing brace found)."
+            )
+            return result
+        except (json.JSONDecodeError, Exception):
+            pass
+
     raise json.JSONDecodeError(
         f"Could not extract valid JSON from response (length={len(text)})",
         text[:200],
@@ -211,7 +443,7 @@ class AnthropicClient(BaseLLMClient):
     def __init__(
         self,
         model: str = "claude-sonnet-4-20250514",
-        max_tokens: int = 2000,
+        max_tokens: int = 4000,
         temperature: float = 0.0,
         max_retries: int = 3,
         retry_delay: float = 1.0,
@@ -260,7 +492,7 @@ class OpenAIClient(BaseLLMClient):
     def __init__(
         self,
         model: str = "gpt-4o",
-        max_tokens: int = 2000,
+        max_tokens: int = 4000,
         temperature: float = 0.0,
         max_retries: int = 3,
         retry_delay: float = 1.0,
@@ -307,7 +539,7 @@ class GeminiClient(BaseLLMClient):
     def __init__(
         self,
         model: str = "gemini-3.0-flash-exp",
-        max_tokens: int = 2000,
+        max_tokens: int = 4000,
         temperature: float = 0.0,
         max_retries: int = 3,
         retry_delay: float = 1.0,
@@ -354,12 +586,14 @@ class GeminiClient(BaseLLMClient):
         if self.json_mode:
             generation_config["response_mime_type"] = "application/json"
 
-        response = client.generate_content(
-            content,
-            generation_config=generation_config,
-        )
+        # Add safety settings to prevent false-positive blocks on ad content
+        gen_kwargs = {"generation_config": generation_config}
+        if GEMINI_SAFETY_PERMISSIVE is not None:
+            gen_kwargs["safety_settings"] = GEMINI_SAFETY_PERMISSIVE
 
-        return response.text
+        response = client.generate_content(content, **gen_kwargs)
+
+        return _extract_gemini_response(response)
 
 
 class GeminiVideoClient(BaseLLMClient):
@@ -514,7 +748,7 @@ class MockLLMClient(BaseLLMClient):
 def get_llm_client(
     provider: str,
     model: str,
-    max_tokens: int = 2000,
+    max_tokens: int = 4000,
     temperature: float = 0.0,
     max_retries: int = 3,
     retry_delay: float = 1.0,
@@ -650,7 +884,7 @@ class AdExtractor:
         self,
         provider: str = "anthropic",
         model: str = "claude-sonnet-4-20250514",
-        max_tokens: int = 2000,
+        max_tokens: int = 4000,
         temperature: float = 0.0,
         schema_mode: str = "adaptive",
         temporal_context: bool = True,
@@ -821,10 +1055,14 @@ class AdExtractor:
             return result
 
         except json.JSONDecodeError as e:
-            logger.error(f"JSON parse error: {e}")
+            logger.error(f"JSON parse error after all recovery attempts: {e}")
             return {
                 "error": "JSON parse error",
-                "raw_response": response[:500],
+                "raw_response": response[:500] if response else "",
+                "parse_stages_attempted": (
+                    "direct, markdown_strip, brace_extract, "
+                    "trailing_comma_fix, truncation_repair"
+                ),
                 "_metadata": {"confidence": 0.0},
             }
         except Exception as e:

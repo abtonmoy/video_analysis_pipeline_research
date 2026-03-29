@@ -1,0 +1,5 @@
+video,duration_s,cascade_latency_s,cascade_cost_usd,adaframe_frames,uniform_frames,vlm_cost_adaframe,vlm_cost_uniform,total_adaframe,total_uniform,net_saving_usd,saving_pct
+-U3LjDN8ErI.mp4,20.0,38.36,0.005328,18,20,0.207,0.23,0.2123,0.23,0.0177,7.7
+-DFuMqROFCQ.mp4,32.9,54.0,0.007499,10,32,0.115,0.368,0.1225,0.368,0.2455,66.7
+-KSKkmypTZM.mp4,16.7,59.1,0.008209,4,16,0.046,0.184,0.0542,0.184,0.1298,70.5
+-1yXdOufzKE.mp4,30.0,66.28,0.009205,9,29,0.1035,0.3335,0.1127,0.3335,0.2208,66.2

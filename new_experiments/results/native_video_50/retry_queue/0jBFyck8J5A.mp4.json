@@ -1,0 +1,9 @@
+{
+  "video_id": "0jBFyck8J5A.mp4",
+  "provider": "gemini-native",
+  "model": "gemini-3-flash-preview",
+  "error_code": "ClientError",
+  "error_message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Resource has been exhausted (e.g. check quota).', 'status': 'RESOURCE_EXHAUSTED'}}",
+  "timestamp": "2026-03-25T14:14:10.211306+00:00",
+  "attempt": 2
+}

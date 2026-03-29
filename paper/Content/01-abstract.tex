@@ -1,0 +1,34 @@
+\begin{abstract}
+Extracting structured semantics from video at scale---topic labels, sentiment arcs, persuasion strategies---requires Vision-Language Models (VLMs) to reason jointly over visual and textual cues, yet the visual front-end remains a critical efficiency bottleneck: uniform frame sampling floods the multimodal backbone with redundant content, while existing keyframe methods optimize for human consumption rather than downstream cross-modal accuracy. We propose \textbf{AdaFrame}, a content-adaptive preprocessing cascade that reconciles visual redundancy removal with multimodal extraction fidelity. Three progressively more expressive filters---perceptual hashing, learned perceptual similarity (LPIPS), and vision-language embedding clustering (CLIP)---form a hierarchical deduplication pipeline in which each tier eliminates the cheapest redundancies first, reserving costly cross-modal computation for genuinely ambiguous frames. Per-video frame budgets are governed by \emph{Intrinsic Semantic Dimensionality} (ISD), an adaptive-budget mechanism that estimates each video's effective semantic complexity through SVD of its frame embeddings, replacing fixed sampling rates with complexity-proportional allocation. On 500 video advertisements from the Pitt Ads Dataset---a multimodal domain rich in scene transitions, typographic overlays, and narrative structure---AdaFrame halves frame count and VLM inference cost relative to uniform sampling with no statistically significant accuracy loss (93.7\% pairwise topic agreement with the full-frame baseline; McNemar's p>0.05). Cheap perceptual pre-filtering reduces expensive CLIP computation by 40\%, and temporal-aware resampling that preserves narrative transition boundaries adds 2.8 percentage points over standalone clustering. Code and evaluation framework will be released upon publication.  
+\end{abstract}
+
+
+
+%% -------------------------------------------------------
+\begin{CCSXML}
+<ccs2012>
+  <concept>
+    <concept_id>10010147.10010178.10010224</concept_id>
+    <concept_desc>Computing methodologies~Computer vision</concept_desc>
+    <concept_significance>500</concept_significance>
+  </concept>
+  <concept>
+    <concept_id>10010147.10010257.10010293.10010294</concept_id>
+    <concept_desc>Computing methodologies~Natural language processing</concept_desc>
+    <concept_significance>500</concept_significance>
+  </concept>
+  <concept>
+    <concept_id>10002944.10011122.10011125</concept_id>
+    <concept_desc>Information systems~Multimedia streaming</concept_desc>
+    <concept_significance>300</concept_significance>
+  </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Computing methodologies~Computer vision}
+\ccsdesc[500]{Computing methodologies~Natural language processing}
+\ccsdesc[300]{Information systems~Multimedia information retrieval}
+
+\keywords{Video Analysis, Vision-Language Models, Frame Selection, Deduplication, Cost Optimization, Advertisement Analysis}
+
+\maketitle

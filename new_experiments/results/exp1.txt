@@ -1,0 +1,27 @@
+Loading pipeline results...
+Total videos: 1704
+Ground truth loaded: 3477 entries
+
+======================================================================
+BUDGET ABLATION RESULTS
+======================================================================
+
+Strategy             Mean Frames     Topic Acc %     N         
+------------------------------------------------------------
+  Full AdaFrame      28.5            86.0            500       
+  ISD only           12.4            86.0            500       
+  Linear duration    12.2            86.0            500       
+  Fixed-25           25.0            86.0            500       
+  Energy only        29.2            86.0            500       
+
+VLM calls: 1342 needed, 1158 reused from Strategy A
+
+Multiplier      Mean Frames     Topic Acc %    
+---------------------------------------------
+  0.5           26.3            86.0           
+  1.0           28.0            86.0           
+  1.5           28.5            86.0            ← default
+  2.0           28.8            86.0           
+  3.0           29.0            86.0           
+
+Results saved to new_experiments/results/budget_ablation/

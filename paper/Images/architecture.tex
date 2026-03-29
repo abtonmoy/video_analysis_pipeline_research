@@ -1,0 +1,126 @@
+%% figures/architecture.tex
+%% Usage: \input{figures/architecture}  inside a figure* in main.tex
+%%
+%% Required in main.tex preamble:
+%%   \usepackage{tikz}
+%%   \usepackage{amsmath}
+%%   \usetikzlibrary{positioning, shapes.geometric, shapes.symbols,
+%%                   shadows, arrows.meta, fit, calc}
+
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    node distance=0.5cm and 0.8cm,
+    >=Latex,
+    font=\sffamily\scriptsize,
+    %%
+    box/.style={
+        draw, rounded corners, align=center,
+        minimum height=0.75cm, minimum width=1.6cm,
+        fill=white, drop shadow
+    },
+    process/.style={box, fill=blue!5},
+    decision/.style={
+        draw, diamond, aspect=2.2,
+        align=center, inner sep=1.5pt,
+        minimum width=3.0cm, minimum height=0.85cm,
+        fill=yellow!8, drop shadow,
+        font=\sffamily\scriptsize
+    },
+    data/.style={
+        draw, cylinder, shape border rotate=90, aspect=0.25,
+        align=center, minimum height=1.0cm, minimum width=1.5cm,
+        fill=gray!6, drop shadow,
+        font=\sffamily\scriptsize
+    },
+    group/.style={
+        draw=gray!60, dashed, rounded corners=4pt, inner sep=0.40cm,
+        label={[anchor=north west, font=\sffamily\bfseries\scriptsize,
+                text=gray!80, yshift=-0.05cm]north west:#1}
+    },
+    arrow/.style={->, thick, gray!60},
+    highlight/.style={->, thick, blue!60!black},
+    annotlabel/.style={font=\sffamily\tiny\bfseries, blue!70!black}
+]
+
+%% ── Input ────────────────────────────────────────────────────────────────────
+\node[data] (input) {Video Input\\(AdBench-500)};
+
+%% ── Frame Extraction ─────────────────────────────────────────────────────────
+\node[process, right=1.0cm of input] (extract)
+    {Frame Extraction\\\tiny 30\,FPS $\to$ $N$ frames};
+\draw[highlight] (input) -- (extract);
+
+%% ── Cascade stages (vertical stack, centered on Stage 2) ────────────────────
+\node[decision, right=1.8cm of extract] (stage2)
+    {Stage 2: Structural\\\tiny SSIM / LPIPS};
+\node[decision, above=0.8cm of stage2] (stage1)
+    {Stage 1: Hash Voting\\\tiny pHash $\cdot$ dHash $\cdot$ wHash};
+\node[decision, below=0.8cm of stage2] (stage3)
+    {Stage 3: Semantic\\\tiny CLIP Embeddings};
+
+%% Group box
+\node[group={Cascade Deduplication Pipeline},
+      fit={(stage1) (stage2) (stage3)},
+      inner ysep=0.55cm] (cascade_group) {};
+
+%% Speed annotations
+\node[annotlabel, above=0.15cm of cascade_group.north, anchor=south] {Coarse Filter (fast)};
+\node[annotlabel, below=0.15cm of cascade_group.south, anchor=north] {Fine Filter (slow)};
+
+%% Arrow: extract -> stage1
+\draw[highlight] (extract.east) -- ++(0.5,0) |- (stage1.west);
+
+%% Cascade flow: stage1 -> stage2 -> stage3
+\draw[highlight] (stage1.south) --
+    node[left, font=\sffamily\tiny, align=right, xshift=-0.1cm] {Keep\\Ambiguous} (stage2.north);
+\draw[highlight] (stage2.south) --
+    node[left, font=\sffamily\tiny, align=right, xshift=-0.1cm] {Keep\\Borderline} (stage3.north);
+
+%% ── Deduplicated set (aligned with Stage 2) ─────────────────────────────────
+\node[process, right=2.0cm of stage2] (deduped)
+    {Deduplicated\\Set $S_\mathrm{clean}$};
+
+%% Single arrow: Stage 3 -> deduped
+\draw[highlight] (stage3.east) -- ++(0.5,0) |- (deduped.west);
+
+%% ── HIB Calculator (between deduped and scoring) ────────────────────────────
+\node[process, right=0.8cm of deduped, fill=green!6] (hib)
+    {HIB Calculator\\\tiny ISD + Semantic Velocity};
+\draw[highlight] (deduped) -- (hib);
+\node[annotlabel, above=0.1cm of hib] {Adaptive Budgeting};
+
+%% ── Multi-Modal Scoring ──────────────────────────────────────────────────────
+\node[process, right=0.8cm of hib, fill=orange!6] (scoring)
+    {Multi-Modal\\Scoring};
+\draw[highlight] (hib) -- node[above, font=\sffamily\tiny] {Budget $K$} (scoring);
+
+%% ── Temporal NMS ─────────────────────────────────────────────────────────────
+\node[process, right=0.8cm of scoring] (nms)
+    {Temporal NMS\\\tiny $\tau(t)=\tau_0 e^{-\lambda\Delta t}$};
+\draw[highlight] (scoring) -- (nms);
+\node[annotlabel, below=0.1cm of nms] {Temporal Awareness};
+
+%% ── Final frame set ──────────────────────────────────────────────────────────
+\node[data, right=0.8cm of nms] (output)
+    {Final Frame Set\\($K_\mathrm{final}$ frames)};
+\draw[highlight] (nms) -- (output);
+
+%% ── VLM inference ────────────────────────────────────────────────────────────
+\node[process, right=0.8cm of output, fill=red!5] (vlm)
+    {VLM Extraction\\\tiny Gemini / Claude / GPT};
+\draw[highlight] (output) -- (vlm);
+
+%% ── Structured JSON output ───────────────────────────────────────────────────
+\node[data, right=0.8cm of vlm] (json) {Structured\\JSON};
+\draw[highlight] (vlm) -- (json);
+
+%% ── Audio pipeline ───────────────────────────────────────────────────────────
+\node[process, below=2.2cm of extract, fill=purple!6] (audio)
+    {Audio Pipeline\\\tiny Whisper + Mood};
+\draw[arrow] (input.south) |- (audio.west);
+\draw[arrow, dashed] (audio.east) -|
+    node[pos=0.25, below, font=\sffamily\tiny] {Cross-modal boost}
+    (scoring.south);
+
+\end{tikzpicture}%
+}

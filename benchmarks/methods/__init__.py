@@ -10,6 +10,8 @@ from .optical_flow import OpticalFlowPeaks
 from .clip_dedup import CLIPOnlyDedup
 from .kmeans import KMeansClustering
 from .pipeline_variants import HIBPipelineBaseline, StaticPipelineBaseline
+from .pyscenedetect import PySceneDetectBaseline
+
 
 ALL_METHODS = {
     "uniform_1fps": UniformSampling,
@@ -21,6 +23,7 @@ ALL_METHODS = {
     "kmeans": KMeansClustering,
     "hib_pipeline": HIBPipelineBaseline,
     "static_pipeline": StaticPipelineBaseline,
+    "pyscenedetect":PySceneDetectBaseline
 }
 
 __all__ = ["ALL_METHODS"]

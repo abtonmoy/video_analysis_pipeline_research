@@ -1,0 +1,289 @@
+{
+  "metadata": {
+    "experiment": "exp2_pyscenedetect",
+    "timestamp": "2026-03-24T16:04:19.755871+00:00",
+    "total_videos": 5,
+    "succeeded": 5,
+    "failed": 0
+  },
+  "results": [
+    {
+      "status": "success",
+      "video_name": "-1yXdOufzKE.mp4",
+      "duration": 29.996633333333335,
+      "n_scenes": 5,
+      "n_frames": 5,
+      "timestamps": [
+        0.0,
+        5.772433333333334,
+        14.247566666666668,
+        17.3173,
+        20.353666666666665
+      ],
+      "extraction": {
+        "error": "JSON parse error",
+        "raw_response": "{\n  \"ad_type\": \"brand_awareness\",\n  \"brand\": {\n    \"brand_name_text\": null,\n    \"logo_visible\": false,\n    \"logo_timestamps\": [],\n    \"brand_text_contrast\": null\n  },\n  \"product\": {\n    \"product_name\": null,\n    \"industry\": \"Vacation and travel\"\n  },\n  \"promotion\": {\n    \"promo_present\": false,\n    \"promo_text\": null,\n    \"promo_deadline\": null,\n    \"price_value\": null\n  },\n  \"call_to_action\": {\n    \"cta_present\": false,\n    \"cta_type\": null\n  },\n  \"message\": {\n    \"primary_message\": \"Experience",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-5X2kzIDroA.mp4",
+      "duration": 60.10170833333333,
+      "n_scenes": 31,
+      "n_frames": 31,
+      "timestamps": [
+        0.0,
+        1.1678333333333333,
+        3.128125,
+        4.25425,
+        6.548208333333333,
+        7.257249999999999,
+        8.633624999999999,
+        10.26025,
+        11.177833333333332,
+        13.680333333333332,
+        17.058708333333332,
+        19.686333333333334,
+        24.232541666666666,
+        26.026,
+        28.611916666666666,
+        29.863166666666665,
+        31.44808333333333,
+        32.11541666666666,
+        33.45008333333333,
+        34.409375,
+        37.162124999999996,
+        37.95458333333333,
+        39.95658333333333,
+        41.916875,
+        44.169124999999994,
+        45.96258333333333,
+        46.58820833333333,
+        48.96558333333333,
+        51.21783333333333,
+        52.802749999999996,
+        60.059999999999995
+      ],
+      "extraction": {
+        "error": "JSON parse error",
+        "raw_response": "{\n  \"ad_type\": \"brand_awareness\",\n  \"brand\": {\n    \"brand_name_text\": null,\n    \"logo_visible\": false,\n    \"logo_timestamps\": [],\n    \"brand_text_contrast\": null\n  },\n  \"product\": {\n    \"",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-5zYYZpuTbU.mp4",
+      "duration": 32.7,
+      "n_scenes": 13,
+      "n_frames": 13,
+      "timestamps": [
+        0.0,
+        0.7666666666666667,
+        4.333333333333333,
+        8.166666666666666,
+        9.866666666666667,
+        15.2,
+        15.933333333333334,
+        19.8,
+        20.366666666666667,
+        22.066666666666666,
+        23.266666666666666,
+        27.033333333333335,
+        27.8
+      ],
+      "extraction": {
+        "error": "JSON parse error",
+        "raw_response": "{\n  \"ad_type\": \"product_demo\",\n  \"brand\": {\n    \"brand_name_text\": null,\n    \"logo_visible\": false,\n    \"logo_timestamps\": [],\n    \"brand_text_contrast\": null\n  },\n  \"product\": {\n    \"product_name\": \"Video game\",\n    \"industry\": \"Games and toys\"\n  },\n  \"promotion\": {\n    \"promo_present\": false,\n    \"promo_text\": null,\n    \"promo_deadline\": null,\n    \"price_value\": null\n  },\n  \"call_to_action\": {\n    \"cta_present\": false,\n    \"cta_type\": null\n  },\n  \"message\": {\n    \"primary_message\": \"Showcases ",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-DFuMqROFCQ.mp4",
+      "duration": 32.89953333333333,
+      "n_scenes": 9,
+      "n_frames": 9,
+      "timestamps": [
+        0.0,
+        2.9362666666666666,
+        8.174833333333334,
+        10.777433333333333,
+        12.779433333333333,
+        15.682333333333334,
+        17.684333333333335,
+        24.3243,
+        26.793433333333333
+      ],
+      "extraction": {
+        "ad_type": "brand_awareness",
+        "brand": {
+          "brand_name_text": "Coca-Cola",
+          "logo_visible": true,
+          "logo_timestamps": [
+            15.7
+          ],
+          "brand_text_contrast": "medium"
+        },
+        "product": {
+          "product_name": "Coca-Cola soft drink",
+          "industry": "food & beverage"
+        },
+        "promotion": {
+          "promo_present": false,
+          "promo_text": null,
+          "promo_deadline": null,
+          "price_value": null
+        },
+        "call_to_action": {
+          "cta_present": false,
+          "cta_type": null
+        },
+        "message": {
+          "primary_message": "Coca-Cola brings joy and connection, even in the serene, cold environment of the Arctic.",
+          "tagline": null
+        },
+        "visual_elements": {
+          "text_density": "low",
+          "dominant_colors": [
+            "black",
+            "dark blue",
+            "white",
+            "light blue"
+          ],
+          "text_overlays": [
+            "Transformations in the Home"
+          ]
+        },
+        "content_rating": {
+          "is_nsfw": false
+        },
+        "target_audience": {
+          "age_group": "all ages",
+          "interests": [
+            "refreshment",
+            "family",
+            "animation",
+            "wildlife"
+          ]
+        },
+        "topic": {
+          "topic_id": 8,
+          "topic_name": "Soda, juice, milk, energy drinks, water",
+          "topic_confidence": "high"
+        },
+        "sentiment": {
+          "primary_sentiment_id": 9,
+          "primary_sentiment_name": "Cheerful",
+          "secondary_sentiments": [
+            23,
+            1
+          ],
+          "sentiment_intensity": "high"
+        },
+        "engagement_metrics": {
+          "is_funny": 0.3,
+          "is_exciting": 0.4,
+          "effectiveness_score": 4
+        },
+        "persuasion_techniques": [
+          "emotion",
+          "association"
+        ],
+        "_metadata": {
+          "ad_type": "brand_awareness",
+          "schema_mode": "fixed",
+          "single_pass": true,
+          "num_frames": 9,
+          "video_duration": 32.89953333333333,
+          "has_audio_context": false,
+          "confidence": 0.671875
+        }
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-GXvYexMoZY.mp4",
+      "duration": 90.25683333333333,
+      "n_scenes": 62,
+      "n_frames": 62,
+      "timestamps": [
+        0.0,
+        3.036366666666667,
+        6.3063,
+        7.2072,
+        9.042366666666666,
+        10.9109,
+        12.012,
+        13.480133333333333,
+        15.248566666666667,
+        16.2162,
+        17.250566666666668,
+        18.585233333333335,
+        19.2192,
+        19.953266666666668,
+        21.187833333333334,
+        22.088733333333334,
+        23.1231,
+        23.957266666666666,
+        24.591233333333335,
+        25.558866666666667,
+        26.693333333333335,
+        27.9279,
+        28.461766666666666,
+        29.8298,
+        30.897533333333335,
+        32.098733333333335,
+        32.96626666666667,
+        33.50013333333333,
+        34.134100000000004,
+        35.5355,
+        36.836800000000004,
+        38.104733333333336,
+        39.3393,
+        41.50813333333333,
+        44.711333333333336,
+        45.97926666666667,
+        46.78006666666667,
+        47.4474,
+        49.382666666666665,
+        51.1511,
+        52.88616666666667,
+        54.3543,
+        55.021633333333334,
+        56.1561,
+        56.8568,
+        57.69096666666667,
+        58.59186666666667,
+        61.5615,
+        63.1631,
+        65.065,
+        66.1661,
+        67.13373333333334,
+        68.63523333333333,
+        70.23683333333334,
+        71.27120000000001,
+        71.9719,
+        73.4734,
+        74.74133333333333,
+        75.94253333333333,
+        76.8768,
+        83.4834,
+        87.22046666666667
+      ],
+      "extraction": {
+        "error": "JSON parse error",
+        "raw_response": "{\n  \"ad_type\": \"product_demo\",\n  \"brand\": {\n    \"brand_name_text\": \"PLAYSTATION VR\",\n    \"logo_visible\": true,\n    \"logo_timestamps\": [\n      7.2,\n      9.0,\n      10.9,",
+        "_metadata": {
+          "confidence": 0.0
+        }
+      }
+    }
+  ]
+}

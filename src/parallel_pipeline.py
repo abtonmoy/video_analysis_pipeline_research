@@ -110,7 +110,33 @@ def _warmup_models(pipeline):
     logging.info("Model warmup complete!")
 
 
-def _init_worker(config_path: str, worker_id_queue, suppress_logs: bool = True):
+def _configure_worker_logging(output_dir: str, worker_id: int):
+    """
+    Configure logging for a worker process to write to the shared log file.
+    
+    Each worker needs its own file handler to write to the same log file
+    because multiprocessing doesn't share file handlers automatically.
+    """
+    log_file = Path(output_dir) / 'processing.log'
+    
+    # Get the root logger
+    root_logger = logging.getLogger()
+    
+    # Remove any existing handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # Create file handler for this worker
+    file_handler = logging.FileHandler(str(log_file), mode='a')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    
+    # Add handler to root logger
+    root_logger.addHandler(file_handler)
+    root_logger.setLevel(logging.DEBUG)
+
+
+def _init_worker(config_path: str, worker_id_queue, suppress_logs: bool = True, output_dir: str = None):
     """
     Initialize worker process with its own pipeline instance.
     Called once per worker when the pool starts.
@@ -134,12 +160,16 @@ def _init_worker(config_path: str, worker_id_queue, suppress_logs: bool = True):
         _worker_id = os.getpid()
     
     print(f"[Worker {_worker_id}] Initializing pipeline and loading models...")
-    
+
+    # Configure logging for this worker to write to the shared log file
+    if output_dir:
+        _configure_worker_logging(output_dir, _worker_id)
+
     # Suppress noisy logs in workers AFTER we print our status
     if suppress_logs:
         # Keep our own logs visible but suppress library noise
         logging.getLogger().setLevel(logging.WARNING)
-        for logger_name in ["whisper", "torch", "PIL", "urllib3", "open_clip", 
+        for logger_name in ["whisper", "torch", "PIL", "urllib3", "open_clip",
                           "lpips", "matplotlib", "numba", "filelock", "transformers",
                           "pyscenedetect", "cv2"]:
             logging.getLogger(logger_name).setLevel(logging.ERROR)
@@ -215,18 +245,23 @@ def _process_video_worker(args: tuple) -> VideoResult:
     try:
         result = _worker_pipeline.process(video_path, skip_extraction=skip_extraction)
         processing_time = time.time() - start_time
-        
+
         # Convert to serializable dict
         result_dict = _result_to_dict(result, video_path)
-        
+
+        # Check if extraction had an error - mark as failed if so
+        extraction_error = False
+        if result_dict.get("status") == "failed":
+            extraction_error = True
+
         return VideoResult(
             video_path=video_path,
             video_name=video_name,
-            success=True,
+            success=not extraction_error,
             result_dict=result_dict,
             processing_time=processing_time
         )
-        
+
     except Exception as e:
         processing_time = time.time() - start_time
         error_msg = f"{type(e).__name__}: {str(e)}"
@@ -257,9 +292,16 @@ def _result_to_dict(result, video_path: str) -> Dict[str, Any]:
             "error": "Processing returned None",
             "processed_at": datetime.now().isoformat()
         }
-    
-    return {
-        "status": "success",
+
+    # Check if extraction had an error - mark as failed if so
+    extraction_error = None
+    if result.extraction_result and isinstance(result.extraction_result, dict):
+        if "error" in result.extraction_result:
+            extraction_error = result.extraction_result.get("error", "Unknown extraction error")
+
+    status = "failed" if extraction_error else "success"
+    result_dict = {
+        "status": status,
         "video_path": result.video_path,
         "video_name": Path(result.video_path).name,
         "processed_at": datetime.now().isoformat(),
@@ -297,6 +339,11 @@ def _result_to_dict(result, video_path: str) -> Dict[str, Any]:
         "extraction": result.extraction_result if result.extraction_result else None
     }
 
+    if extraction_error:
+        result_dict["error"] = extraction_error
+
+    return result_dict
+
 
 class ParallelPipeline:
     """
@@ -313,24 +360,27 @@ class ParallelPipeline:
        - Warms up models with dummy data (forces LPIPS, CLIP to fully initialize)
     3. Workers are now ready to process videos without any model loading
     """
-    
+
     def __init__(
         self,
         config_path: str = "config/default.yaml",
         num_workers: int = 4,
-        suppress_worker_logs: bool = True
+        suppress_worker_logs: bool = True,
+        output_dir: str = None
     ):
         """
         Initialize parallel pipeline.
-        
+
         Args:
             config_path: Path to pipeline configuration file
             num_workers: Number of worker processes (each loads models once)
             suppress_worker_logs: If True, suppress library logs in worker processes
+            output_dir: Directory for output files (used for logging)
         """
         self.config_path = config_path
         self.num_workers = num_workers
         self.suppress_worker_logs = suppress_worker_logs
+        self.output_dir = output_dir
         self._pool = None
         self._manager = None
         self._worker_id_queue = None
@@ -361,7 +411,7 @@ class ParallelPipeline:
         self._pool = ctx.Pool(
             processes=self.num_workers,
             initializer=_init_worker,
-            initargs=(self.config_path, self._worker_id_queue, self.suppress_worker_logs)
+            initargs=(self.config_path, self._worker_id_queue, self.suppress_worker_logs, self.output_dir)
         )
         
         print(f"\n{'='*60}")

@@ -1,0 +1,9 @@
+{
+  "video_id": "Cx_5i5rWVE0.mp4",
+  "provider": "gemini",
+  "model": "gemini-3-flash-preview",
+  "error_code": "Exception",
+  "error_message": "No frames selected by DSNet",
+  "timestamp": "2026-03-25T05:07:05.434675+00:00",
+  "attempt": 2
+}

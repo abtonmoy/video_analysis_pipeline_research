@@ -1,0 +1,24 @@
+{
+  "n_videos": 500,
+  "cascade": {
+    "mean_latency_s": 118.12,
+    "median_latency_s": 79.69,
+    "mean_cost_usd": 0.016406
+  },
+  "vlm_cost": {
+    "adaframe_mean_usd": 0.2827,
+    "uniform_mean_usd": 0.5728
+  },
+  "total_cost": {
+    "adaframe_mean_usd": 0.2991,
+    "uniform_mean_usd": 0.5728
+  },
+  "savings": {
+    "mean_net_saving_usd": 0.2737,
+    "positive_savings_count": 470,
+    "positive_savings_pct": 94.0,
+    "breakeven_duration_s": 2.8
+  },
+  "gpu_hourly_rate": 0.5,
+  "cost_per_frame_usd": 0.0115
+}

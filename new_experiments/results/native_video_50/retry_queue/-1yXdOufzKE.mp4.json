@@ -1,0 +1,9 @@
+{
+  "video_id": "-1yXdOufzKE.mp4",
+  "provider": "gemini-native",
+  "model": "gemini-3-flash-preview",
+  "error_code": "NameError",
+  "error_message": "name 'response' is not defined",
+  "timestamp": "2026-03-25T13:47:56.355311+00:00",
+  "attempt": 2
+}

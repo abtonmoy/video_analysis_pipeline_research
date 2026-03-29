@@ -1,0 +1,166 @@
+{
+  "intersection_size": 19,
+  "total_videos": 50,
+  "intersection_video_ids": [
+    "-1yXdOufzKE.mp4",
+    "-5X2kzIDroA.mp4",
+    "-DFuMqROFCQ.mp4",
+    "-KSKkmypTZM.mp4",
+    "-UGQp9pfU_Q.mp4",
+    "-V2r_9Um2Tw.mp4",
+    "-VmCOAGhHkM.mp4",
+    "-aR3Gpsn4v4.mp4",
+    "-iKqr230U9M.mp4",
+    "-ijH3cRJ1BY.mp4",
+    "-nYhixp7bXI.mp4",
+    "-wXjs6DXoeY.mp4",
+    "0-U4Yr9UNBo.mp4",
+    "064ipuBiWDg.mp4",
+    "0A43tb18T8Y.mp4",
+    "0B79RkBxSgU.mp4",
+    "0G7g9lw20l4.mp4",
+    "0P3A6V_sDSI.mp4",
+    "0PgjcgqFYP4.mp4"
+  ],
+  "error_counts": {
+    "uniform_1fps": 14,
+    "random": 16,
+    "histogram": 14,
+    "orb": 15,
+    "optical_flow": 14,
+    "clip_only": 17,
+    "kmeans": 14,
+    "hib_pipeline": 20,
+    "static_pipeline": 20
+  },
+  "intersection_accuracy": {
+    "uniform_1fps": {
+      "method": "uniform_1fps",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 17,
+      "total": 19,
+      "topic_accuracy": 89.5
+    },
+    "random": {
+      "method": "random",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 17,
+      "total": 19,
+      "topic_accuracy": 89.5
+    },
+    "histogram": {
+      "method": "histogram",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 16,
+      "total": 19,
+      "topic_accuracy": 84.2
+    },
+    "orb": {
+      "method": "orb",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 17,
+      "total": 19,
+      "topic_accuracy": 89.5
+    },
+    "optical_flow": {
+      "method": "optical_flow",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 16,
+      "total": 19,
+      "topic_accuracy": 84.2
+    },
+    "clip_only": {
+      "method": "clip_only",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 16,
+      "total": 19,
+      "topic_accuracy": 84.2
+    },
+    "kmeans": {
+      "method": "kmeans",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 16,
+      "total": 19,
+      "topic_accuracy": 84.2
+    },
+    "hib_pipeline": {
+      "method": "hib_pipeline",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 17,
+      "total": 19,
+      "topic_accuracy": 89.5
+    },
+    "static_pipeline": {
+      "method": "static_pipeline",
+      "intersection_n": 19,
+      "valid_with_gt": 19,
+      "correct": 16,
+      "total": 19,
+      "topic_accuracy": 84.2
+    }
+  },
+  "full_accuracy": {
+    "uniform_1fps": {
+      "method": "uniform_1fps",
+      "correct": 32,
+      "total": 36,
+      "topic_accuracy": 88.9
+    },
+    "random": {
+      "method": "random",
+      "correct": 31,
+      "total": 34,
+      "topic_accuracy": 91.2
+    },
+    "histogram": {
+      "method": "histogram",
+      "correct": 31,
+      "total": 36,
+      "topic_accuracy": 86.1
+    },
+    "orb": {
+      "method": "orb",
+      "correct": 32,
+      "total": 35,
+      "topic_accuracy": 91.4
+    },
+    "optical_flow": {
+      "method": "optical_flow",
+      "correct": 31,
+      "total": 36,
+      "topic_accuracy": 86.1
+    },
+    "clip_only": {
+      "method": "clip_only",
+      "correct": 28,
+      "total": 33,
+      "topic_accuracy": 84.8
+    },
+    "kmeans": {
+      "method": "kmeans",
+      "correct": 31,
+      "total": 36,
+      "topic_accuracy": 86.1
+    },
+    "hib_pipeline": {
+      "method": "hib_pipeline",
+      "correct": 27,
+      "total": 30,
+      "topic_accuracy": 90.0
+    },
+    "static_pipeline": {
+      "method": "static_pipeline",
+      "correct": 26,
+      "total": 30,
+      "topic_accuracy": 86.7
+    }
+  }
+}

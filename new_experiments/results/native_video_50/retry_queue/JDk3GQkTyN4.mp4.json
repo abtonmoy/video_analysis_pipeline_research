@@ -1,0 +1,9 @@
+{
+  "video_id": "JDk3GQkTyN4.mp4",
+  "provider": "gemini-native",
+  "model": "gemini-2.5-flash",
+  "error_code": "JSONDecodeError",
+  "error_message": "Could not extract valid JSON from response (length=311): line 1 column 1 (char 0)",
+  "timestamp": "2026-03-25T16:41:29.257019+00:00",
+  "attempt": 2
+}

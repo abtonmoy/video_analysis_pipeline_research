@@ -515,7 +515,8 @@ def process_videos_parallel(
             with ParallelPipeline(
                 config_path=CONFIG_PATH,
                 num_workers=num_workers,
-                suppress_worker_logs=True
+                suppress_worker_logs=True,
+                output_dir=OUTPUT_DIR
             ) as pipeline:
                 
                 console.print(f"[success]Workers initialized! Starting processing...[/success]\n")

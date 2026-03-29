@@ -1,0 +1,3 @@
+DSNet experiment failed: No module named 'extraction'
+Saving fallback text...
+Saved to new_experiments/results/dsnet/FAILED.txt and new_experiments/results/dsnet/fallback_text.tex

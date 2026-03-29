@@ -1,0 +1,369 @@
+{
+  "metadata": {
+    "experiment": "exp7_native_video",
+    "timestamp": "2026-03-24T16:06:17.377397+00:00",
+    "total_videos": 5,
+    "succeeded": 4,
+    "failed": 1
+  },
+  "results": [
+    {
+      "status": "success",
+      "video_name": "-1yXdOufzKE.mp4",
+      "duration": 29.996633333333335,
+      "mode": "native_video",
+      "latency_s": 12.7,
+      "extraction": {
+        "ad_type": "brand_awareness",
+        "brand": {
+          "brand_name_text": "COLORADO",
+          "logo_visible": true,
+          "logo_timestamps": [
+            0.26
+          ],
+          "brand_text_contrast": "high"
+        },
+        "product": {
+          "product_name": "Colorado (travel destination)",
+          "industry": "Travel & Tourism"
+        },
+        "promotion": {
+          "promo_present": false,
+          "promo_text": null,
+          "promo_deadline": null,
+          "price_value": null
+        },
+        "call_to_action": {
+          "cta_present": true,
+          "cta_type": "Visit website"
+        },
+        "message": {
+          "primary_message": "Experience unique and unforgettable moments in Colorado's natural beauty.",
+          "tagline": "COME TO LIFE"
+        },
+        "visual_elements": {
+          "text_density": "low",
+          "dominant_colors": [
+            "blue",
+            "green",
+            "brown",
+            "orange",
+            "white"
+          ],
+          "text_overlays": [
+            "COME TO LIFE",
+            "COLORADO",
+            "GET THE GUIDE AT COLORADO.COM"
+          ]
+        },
+        "content_rating": {
+          "is_nsfw": false
+        },
+        "target_audience": {
+          "age_group": "all ages",
+          "interests": [
+            "nature",
+            "travel",
+            "hiking",
+            "adventure",
+            "scenic views",
+            "outdoor activities"
+          ]
+        },
+        "topic": {
+          "topic_id": 25,
+          "topic_name": "Vacation and travel",
+          "topic_confidence": "high"
+        },
+        "sentiment": {
+          "primary_sentiment_id": 1,
+          "primary_sentiment_name": "Active",
+          "secondary_sentiments": [
+            5,
+            8,
+            21
+          ],
+          "sentiment_intensity": "high"
+        },
+        "engagement_metrics": {
+          "is_funny": 0.0,
+          "is_exciting": 0.8,
+          "effectiveness_score": 4
+        },
+        "persuasion_techniques": [
+          "emotion",
+          "vivid imagery",
+          "storytelling"
+        ]
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-5X2kzIDroA.mp4",
+      "duration": 60.10170833333333,
+      "mode": "native_video",
+      "latency_s": 16.67,
+      "extraction": {
+        "ad_type": "brand_awareness",
+        "brand": {
+          "brand_name_text": "Bio",
+          "logo_visible": true,
+          "logo_timestamps": [
+            0.54
+          ],
+          "brand_text_contrast": "high"
+        },
+        "product": {
+          "product_name": "Biopharmaceutical medicines",
+          "industry": "Healthcare"
+        },
+        "promotion": {
+          "promo_present": false,
+          "promo_text": null,
+          "promo_deadline": null,
+          "price_value": null
+        },
+        "call_to_action": {
+          "cta_present": false,
+          "cta_type": null
+        },
+        "message": {
+          "primary_message": "Biopharmaceutical medicines provide hope and time, enabling full and rich lives.",
+          "tagline": "TIME IS PRECIOUS. LIFE"
+        },
+        "visual_elements": {
+          "text_density": "low",
+          "dominant_colors": [
+            "white",
+            "blue",
+            "green",
+            "brown",
+            "yellow"
+          ],
+          "text_overlays": [
+            "What is Time?",
+            "Bio",
+            "TIME IS PRECIOUS. LIFE"
+          ]
+        },
+        "content_rating": {
+          "is_nsfw": false
+        },
+        "target_audience": {
+          "age_group": "all ages",
+          "interests": [
+            "health",
+            "family",
+            "science",
+            "medical advancements",
+            "longevity"
+          ]
+        },
+        "topic": {
+          "topic_id": 18,
+          "topic_name": "Healthcare and medications",
+          "topic_confidence": "high"
+        },
+        "sentiment": {
+          "primary_sentiment_id": 21,
+          "primary_sentiment_name": "Inspired",
+          "secondary_sentiments": [
+            16,
+            8,
+            23
+          ],
+          "sentiment_intensity": "high"
+        },
+        "engagement_metrics": {
+          "is_funny": 0.0,
+          "is_exciting": 0.7,
+          "effectiveness_score": 4
+        },
+        "persuasion_techniques": [
+          "emotion",
+          "hope",
+          "authority"
+        ]
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-5zYYZpuTbU.mp4",
+      "duration": 32.7,
+      "mode": "native_video",
+      "latency_s": 16.38,
+      "extraction": {
+        "ad_type": "entertainment",
+        "brand": {
+          "brand_name_text": "SWORD OF CHAOS",
+          "logo_visible": true,
+          "logo_timestamps": [
+            0.28,
+            0.32
+          ],
+          "brand_text_contrast": "high"
+        },
+        "product": {
+          "product_name": "SWORD OF CHAOS",
+          "industry": "Gaming"
+        },
+        "promotion": {
+          "promo_present": false,
+          "promo_text": null,
+          "promo_deadline": null,
+          "price_value": null
+        },
+        "call_to_action": {
+          "cta_present": false,
+          "cta_type": null
+        },
+        "message": {
+          "primary_message": "Experience action-packed combat with powerful female characters in Sword of Chaos.",
+          "tagline": null
+        },
+        "visual_elements": {
+          "text_density": "low",
+          "dominant_colors": [
+            "gold",
+            "blue",
+            "white",
+            "brown",
+            "red"
+          ],
+          "text_overlays": [
+            "SWORD OF CHAOS",
+            "\u30bd\u30fc\u30c9\u30fb\u30aa\u30d6\u30fb\u30ab\u30aa\u30b9"
+          ]
+        },
+        "content_rating": {
+          "is_nsfw": false
+        },
+        "target_audience": {
+          "age_group": "18-40",
+          "interests": [
+            "Video games",
+            "Action games",
+            "Fantasy",
+            "Anime",
+            "RPG"
+          ]
+        },
+        "topic": {
+          "topic_id": 21,
+          "topic_name": "Games and toys",
+          "topic_confidence": "high"
+        },
+        "sentiment": {
+          "primary_sentiment_id": 1,
+          "primary_sentiment_name": "Active",
+          "secondary_sentiments": [
+            5,
+            18,
+            21
+          ],
+          "sentiment_intensity": "high"
+        },
+        "engagement_metrics": {
+          "is_funny": 0.0,
+          "is_exciting": 0.8,
+          "effectiveness_score": 4
+        },
+        "persuasion_techniques": [
+          "Emotion",
+          "Visual appeal"
+        ]
+      }
+    },
+    {
+      "status": "success",
+      "video_name": "-DFuMqROFCQ.mp4",
+      "duration": 32.89953333333333,
+      "mode": "native_video",
+      "latency_s": 15.83,
+      "extraction": {
+        "ad_type": "brand_awareness",
+        "brand": {
+          "brand_name_text": "Coca-Cola",
+          "logo_visible": true,
+          "logo_timestamps": [
+            0.16,
+            0.24,
+            0.29,
+            0.3
+          ],
+          "brand_text_contrast": "high"
+        },
+        "product": {
+          "product_name": "Coca-Cola",
+          "industry": "Food & Beverage"
+        },
+        "promotion": {
+          "promo_present": false,
+          "promo_text": null,
+          "promo_deadline": null,
+          "price_value": null
+        },
+        "call_to_action": {
+          "cta_present": false,
+          "cta_type": null
+        },
+        "message": {
+          "primary_message": "Coca-Cola brings joy and happiness, especially during the holidays, fostering connection and warmth.",
+          "tagline": "ALWAYS HAPPY HOLIDAYS"
+        },
+        "visual_elements": {
+          "text_density": "low",
+          "dominant_colors": [
+            "blue",
+            "white",
+            "black",
+            "red"
+          ],
+          "text_overlays": [
+            "MMBear",
+            "Presents",
+            "ALWAYS HAPPY HOLIDAYS",
+            "Coca-Cola"
+          ]
+        },
+        "content_rating": {
+          "is_nsfw": false
+        },
+        "target_audience": {
+          "age_group": "all ages",
+          "interests": [
+            "family",
+            "holidays",
+            "animals",
+            "refreshment"
+          ]
+        },
+        "topic": {
+          "topic_id": 8,
+          "topic_name": "Soda, juice, milk, energy drinks, water",
+          "topic_confidence": "high"
+        },
+        "sentiment": {
+          "primary_sentiment_id": 9,
+          "primary_sentiment_name": "Cheerful",
+          "secondary_sentiments": [
+            8,
+            23,
+            6
+          ],
+          "sentiment_intensity": "high"
+        },
+        "engagement_metrics": {
+          "is_funny": 0.3,
+          "is_exciting": 0.6,
+          "effectiveness_score": 4
+        },
+        "persuasion_techniques": [
+          "emotion",
+          "association",
+          "storytelling"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{liu2023visual,team2023gemini}
+\@writefile{toc}{\contentsline {section}{Abstract}{1}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:introduction}{{1}{1}{Introduction}{section.1}{}}
+\citation{potapov2014category,singh2022temporal}
+\citation{zhou2018deep,zhao2021video}
+\citation{potapov2014category}
+\citation{hanjalic2004unified}
+\citation{das2011video}
+\citation{cernekova2006entropy}
+\citation{trivedi2007multi}
+\citation{zhou2018deep}
+\citation{zhao2021video}
+\citation{rochan2023task}
+\citation{zauner2010framework}
+\citation{krawczyk2015phash}
+\citation{wang2019robust}
+\citation{zhang2018unreasonable}
+\citation{wang2004image}
+\citation{openai2023gpt4v}
+\citation{team2023gemini}
+\citation{chen2024tokenpacker}
+\citation{kwon2023efficient}
+\citation{denton2014exploiting}
+\citation{fefferman2016testing}
+\citation{greydanus2019hamiltonian}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related_work}{{2}{2}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Video Frame Selection and Summarization}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Perceptual Hashing and Similarity Metrics}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Vision-Language Models for Video Analysis}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}SVD-Based Dimensionality Estimation}{2}{subsection.2.4}\protected@file@percent }
+\citation{cernekova2006entropy}
+\citation{radford2022whisper}
+\@writefile{toc}{\contentsline {section}{\numberline {3}System Overview}{3}{section.3}\protected@file@percent }
+\newlabel{sec:system_overview}{{3}{3}{System Overview}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Pipeline Architecture}{3}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Data Processing}{3}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:data_processing}{{3.2}{3}{Data Processing}{subsection.3.2}{}}
+\citation{zauner2010framework}
+\citation{krawczyk2015phash}
+\citation{wang2019robust}
+\citation{zhang2018unreasonable}
+\citation{radford2021learning}
+\citation{radford2022whisper}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces End-to-end processing example for a 30-second gaming advertisement (``Sword of Chaos'', 30\,FPS, 981 total frames).}}{4}{table.caption.5}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:example}{{1}{4}{End-to-end processing example for a 30-second gaming advertisement (``Sword of Chaos'', 30\,FPS, 981 total frames)}{table.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Methodology}{4}{section.4}\protected@file@percent }
+\newlabel{sec:methodology}{{4}{4}{Methodology}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Problem Formulation}{4}{subsection.4.1}\protected@file@percent }
+\newlabel{eq:optimization}{{1}{4}{Problem Formulation}{equation.4.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Adaptive Information Budgeting}{4}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:budget}{{4.2}{4}{Adaptive Information Budgeting}{subsection.4.2}{}}
+\newlabel{eq:semantic_energy}{{2}{4}{Adaptive Information Budgeting}{equation.4.2}{}}
+\newlabel{eq:attention_yield}{{3}{4}{Adaptive Information Budgeting}{equation.4.3}{}}
+\newlabel{eq:isd}{{4}{4}{Adaptive Information Budgeting}{equation.4.4}{}}
+\newlabel{eq:budget}{{5}{4}{Adaptive Information Budgeting}{equation.4.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Three-Tier Hierarchical Deduplication Cascade}{4}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:cascade}{{4.3}{4}{Three-Tier Hierarchical Deduplication Cascade}{subsection.4.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.1}Tier 1: Hash Voting}{4}{subsubsection.4.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.2}Tier 2: Learned Perceptual Similarity}{4}{subsubsection.4.3.2}\protected@file@percent }
+\newlabel{sec:tanms}{{4.3.3}{4}{Tier 3: Semantic Clustering with Temporal NMS}{subsubsection.4.3.3}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.3.3}Tier 3: Semantic Clustering with Temporal NMS}{4}{subsubsection.4.3.3}\protected@file@percent }
+\newlabel{eq:tanms}{{7}{4}{Tier 3: Semantic Clustering with Temporal NMS}{equation.4.7}{}}
+\citation{smith2007overview}
+\citation{hussain2017automatic}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces System architecture. Videos flow through parallel audio-visual pipelines. The visual pipeline applies three-tier deduplication (hash voting $\rightarrow $ LPIPS $\rightarrow $ CLIP clustering) with adaptive budget allocation via ISD and Semantic Energy. Selected frames undergo OCR pre-processing before single-pass VLM extraction. Audio pipeline transcribes speech and classifies mood. Final outputs merge both modalities.}}{5}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{5}{System architecture. Videos flow through parallel audio-visual pipelines. The visual pipeline applies three-tier deduplication (hash voting $\rightarrow $ LPIPS $\rightarrow $ CLIP clustering) with adaptive budget allocation via ISD and Semantic Energy. Selected frames undergo OCR pre-processing before single-pass VLM extraction. Audio pipeline transcribes speech and classifies mood. Final outputs merge both modalities}{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Progressive Frame Reduction. Frame counts at each stage of the cascade for the ``Sword of Chaos'' gaming ad (30s at 30 FPS), showing a 97.5\% reduction from native frames to the final VLM input set.}}{5}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:waterfall}{{2}{5}{Progressive Frame Reduction. Frame counts at each stage of the cascade for the ``Sword of Chaos'' gaming ad (30s at 30 FPS), showing a 97.5\% reduction from native frames to the final VLM input set}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Multi-Modal Pipeline Integration}{5}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Experimental Setup}{5}{section.5}\protected@file@percent }
+\newlabel{sec:experiments}{{5}{5}{Experimental Setup}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Dataset}{5}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Baselines}{5}{subsection.5.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Per-Tier Deduplication Examples. Tier 1 (Hash Voting) catches identical/near-identical frames; Tier 2 (LPIPS) catches perceptual duplicates across minor transformations; Tier 3 (CLIP) merges semantically redundant shots using cluster-based selection.}}{6}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:tier_examples}{{3}{6}{Per-Tier Deduplication Examples. Tier 1 (Hash Voting) catches identical/near-identical frames; Tier 2 (LPIPS) catches perceptual duplicates across minor transformations; Tier 3 (CLIP) merges semantically redundant shots using cluster-based selection}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Implementation Details}{6}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Metrics}{6}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Results}{6}{section.6}\protected@file@percent }
+\newlabel{sec:results}{{6}{6}{Results}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Main Comparison}{6}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Pairwise Agreement Analysis}{6}{subsection.6.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Comparison of 11 frame selection methods on 484 videos. Our cascade halves frame count and VLM cost vs.\ Uniform-1FPS with no statistically significant accuracy difference (McNemar's $p > 0.05$). Best in each column bolded.}}{7}{table.caption.9}\protected@file@percent }
+\newlabel{tab:main_comparison}{{2}{7}{Comparison of 11 frame selection methods on 484 videos. Our cascade halves frame count and VLM cost vs.\ Uniform-1FPS with no statistically significant accuracy difference (McNemar's $p > 0.05$). Best in each column bolded}{table.caption.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Pairwise agreement between our method and baselines. Topic agreement $>$90\% across all methods indicates semantic equivalence. $N$ = videos with valid extractions from both methods.}}{7}{table.caption.10}\protected@file@percent }
+\newlabel{tab:pairwise}{{3}{7}{Pairwise agreement between our method and baselines. Topic agreement $>$90\% across all methods indicates semantic equivalence. $N$ = videos with valid extractions from both methods}{table.caption.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Statistical Significance}{7}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Cross-Validation}{7}{subsection.6.4}\protected@file@percent }
+\newlabel{sec:full_pipeline}{{6.4}{7}{Cross-Validation}{subsection.6.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Ablation: Cascade Tier Contributions}{7}{subsection.6.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Budget Formula Ablation (N=500 videos). The full formulation achieves widest dynamic range (100 frames) while maintaining accuracy. Constrained variants either under-budget (ISD-only, Linear) or lack adaptivity (Fixed-25).}}{7}{table.caption.11}\protected@file@percent }
+\newlabel{tab:budget_ablation}{{4}{7}{Budget Formula Ablation (N=500 videos). The full formulation achieves widest dynamic range (100 frames) while maintaining accuracy. Constrained variants either under-budget (ISD-only, Linear) or lack adaptivity (Fixed-25)}{table.caption.11}{}}
+\citation{Abril07}
+\citation{Cohen07}
+\citation{JCohen96}
+\citation{Kosiur01}
+\citation{Harel79}
+\citation{Editor00}
+\citation{Editor00a}
+\citation{Spector90}
+\citation{Douglass98}
+\citation{Knuth97}
+\citation{Andler79,Hagerup1993}
+\citation{Smith10}
+\citation{VanGundy07}
+\citation{Harel78}
+\citation{Bornmann2019,AnzarootPBM14}
+\citation{Clarkson85}
+\citation{anisi03}
+\citation{Thornburg01,Ablamowicz07,Poker06}
+\citation{Obama08}
+\citation{Novak03}
+\citation{Lee05}
+\citation{JoeScientist001}
+\citation{rous08}
+\citation{SaeediMEJ10}
+\citation{SaeediJETC10}
+\citation{Kirschmer:2010:AEI:1958016.1958018}
+\citation{MR781536}
+\citation{MR781537}
+\citation{Reiser2014}
+\citation{Baggett2025}
+\citation{2004:ITE:1009386.1010128,Kirschmer:2010:AEI:1958016.1958018}
+\citation{TUGInstmem,Thornburg01,CTANacmart}
+\citation{R}
+\citation{UMassCitations}
+\newlabel{tocindent-1}{0pt}
+\newlabel{tocindent0}{0pt}
+\newlabel{tocindent1}{4.62497pt}
+\newlabel{tocindent2}{11.81937pt}
+\newlabel{tocindent3}{22.09708pt}
+\newlabel{tocindent4}{0pt}
+\newlabel{tocindent5}{0pt}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Budget Formula Ablation. Mean frames selected across varying formulation constraints.}}{8}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:exp1_strategies}{{4}{8}{Budget Formula Ablation. Mean frames selected across varying formulation constraints}{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Content-Type Analysis}{8}{subsection.6.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Adaptive Budget Estimation Validation}{8}{subsection.6.7}\protected@file@percent }
+\newlabel{sec:isd_validation}{{6.7}{8}{Adaptive Budget Estimation Validation}{subsection.6.7}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.7.1}ISD Correlates with Semantic Complexity}{8}{subsubsection.6.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.7.2}Budget Formula Ablation}{8}{subsubsection.6.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.7.3}Content-Type Adaptivity}{8}{subsubsection.6.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.7.4}ISD Threshold Sensitivity}{8}{subsubsection.6.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8}Failure Case Analysis}{8}{subsection.6.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Qualitative Comparison of Sampling Strategies. Top strips for each video show industry-standard Uniform-1FPS sampling (redundant frames marked in red), while bottom strips show AdaFrame's adaptive selection. Our method preserves unique shots while dropping visual duplicates.}}{9}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:qualitative}{{5}{9}{Qualitative Comparison of Sampling Strategies. Top strips for each video show industry-standard Uniform-1FPS sampling (redundant frames marked in red), while bottom strips show AdaFrame's adaptive selection. Our method preserves unique shots while dropping visual duplicates}{figure.caption.13}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Failure modes on the evaluation set. Most failures (78\%) involve subtle visual changes.}}{9}{table.caption.18}\protected@file@percent }
+\newlabel{tab:failures}{{5}{9}{Failure modes on the evaluation set. Most failures (78\%) involve subtle visual changes}{table.caption.18}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Budget Formula Ablation. Box plots show frame budget distributions across strategies. Full AdaFrame provides widest dynamic range (100 frames) vs Fixed-25 (0 range), proving content-aware adaptivity.}}{9}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:budget_ablation}{{7}{9}{Budget Formula Ablation. Box plots show frame budget distributions across strategies. Full AdaFrame provides widest dynamic range (100 frames) vs Fixed-25 (0 range), proving content-aware adaptivity}{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Content-Type Adaptivity. Violin plots show ISD distributions by motion category. Budget adapts 1.55$\times $ between low-motion (ISD=17.7) and high-motion (ISD=27.3) content.}}{9}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:content_adaptivity}{{8}{9}{Content-Type Adaptivity. Violin plots show ISD distributions by motion category. Budget adapts 1.55$\times $ between low-motion (ISD=17.7) and high-motion (ISD=27.3) content}{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces ISD vs. Number of Scenes. Strong positive correlation ($r=0.784$) validates that ISD captures semantic complexity. Videos with more scenes receive higher ISD values, justifying larger frame budgets.}}{9}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:isd_correlation}{{6}{9}{ISD vs. Number of Scenes. Strong positive correlation ($r=0.784$) validates that ISD captures semantic complexity. Videos with more scenes receive higher ISD values, justifying larger frame budgets}{figure.caption.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces ISD Threshold Sensitivity. Mean ISD across variance thresholds ($\tau $). $\tau =0.90$ (marked) provides optimal balance between coverage (23.4 frames) and efficiency.}}{10}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:threshold_sensitivity}{{9}{10}{ISD Threshold Sensitivity. Mean ISD across variance thresholds ($\tau $). $\tau =0.90$ (marked) provides optimal balance between coverage (23.4 frames) and efficiency}{figure.caption.17}{}}
+\newlabel{TotPages}{{10}{10}{}{page.10}{}}
+\gdef \@abspage@last{10}
